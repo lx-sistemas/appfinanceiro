@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Controle Financeiro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: { extend: {} }
+    }
+  </script>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Estilo para a barra de rolagem */
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
+    .dark .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #475569; }
+  </style>
+</head>
+<body class="bg-gray-200 dark:bg-black flex justify-center h-screen transition-colors duration-300 antialiased">
+
+  <div class="w-full max-w-md bg-slate-50 dark:bg-black h-full flex flex-col relative shadow-2xl overflow-hidden transition-colors duration-300">
+    
+    <!-- CABEÇALHO -->
+    <div class="bg-gradient-to-r from-blue-600 to-indigo-700 p-5 rounded-b-3xl shadow-lg z-10 flex-shrink-0">
+      <div class="flex justify-between items-center">
+        <button onclick="buscarDadosDaPlanilha()" class="p-2.5 bg-white/20 text-white rounded-full hover:bg-white/30 transition-all shadow-sm backdrop-blur-sm" title="Atualizar Dados">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+        </button>
+        <h1 class="text-white text-xl font-extrabold tracking-wide drop-shadow-md">Controle Financeiro</h1>
+        <button onclick="toggleDarkMode()" class="p-2.5 bg-white/20 text-white rounded-full hover:bg-white/30 transition-all shadow-sm backdrop-blur-sm" title="Modo Escuro">
+          <span id="iconeTema">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- NAVEGAÇÃO DO MÊS -->
+    <div class="flex justify-between items-center p-5 mt-2 flex-shrink-0">
+      <button onclick="mudarMes(-1)" class="text-3xl text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors px-4">&lt;</button>
+      <div class="text-center">
+        <h2 id="mesAtual" class="text-2xl font-black text-gray-800 dark:text-white">OUTUBRO</h2>
+        <p id="anoAtual" class="text-gray-500 dark:text-gray-400 font-medium">2026</p>
+      </div>
+      <button onclick="mudarMes(1)" class="text-3xl text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors px-4">&gt;</button>
+    </div>
+
+    <!-- CARDS DE RESUMO (Área que Rola) -->
+    <div class="flex-1 overflow-y-auto px-5 pb-5 space-y-5 custom-scrollbar">
+      
+      <!-- NOSSA POUPANÇA -->
+      <div class="bg-white dark:bg-gray-900 border-l-4 border-yellow-500 p-5 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+        <h3 class="font-extrabold text-black dark:text-white text-lg mb-4 border-b border-gray-100 dark:border-gray-800 pb-2">🏦 NOSSA POUPANÇA</h3>
+        
+        <div class="flex justify-between mb-5">
+           <div>
+              <p class="text-red-500 font-bold text-sm tracking-wider mb-1 flex items-center gap-1">🔴 ALINE</p>
+              <p class="font-black text-gray-800 dark:text-white text-lg">R$ <span id="poupAline">0,00</span></p>
+           </div>
+           <div class="text-right">
+              <p class="text-blue-500 font-bold text-sm tracking-wider mb-1 flex items-center gap-1 justify-end">🔵 LÉO</p>
+              <p class="font-black text-gray-800 dark:text-white text-lg">R$ <span id="poupLeo">0,00</span></p>
+           </div>
+        </div>
+
+        <!-- BARRA DE PROGRESSO -->
+        <div class="mb-5 bg-gray-50 dark:bg-gray-800 p-3 rounded-xl border border-gray-100 dark:border-gray-700">
+           <div class="flex justify-between text-xs font-black text-gray-600 dark:text-gray-300 mb-2 uppercase tracking-wide">
+             <span id="poupTextoMeta">1ª META: R$ 5.000</span>
+             <span id="poupTotal">R$ 0,00</span>
+           </div>
+           <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+              <div id="poupBarra" class="bg-gradient-to-r from-yellow-400 to-yellow-500 h-3 rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(250,204,21,0.5)]" style="width: 0%"></div>
+           </div>
+        </div>
+
+        <div class="flex gap-3">
+          <button onclick="abrirModalPoupanca()" class="flex-1 bg-green-50 hover:bg-green-100 dark:bg-green-900/30 dark:hover:bg-green-900/50 text-green-700 dark:text-green-400 font-bold py-2.5 rounded-xl transition-colors text-sm border border-green-200 dark:border-green-800">
+            + Add Lançamento
+          </button>
+          <button onclick="verDetalhes('poupanca')" class="flex-1 bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-900/30 dark:hover:bg-yellow-900/50 text-yellow-700 dark:text-yellow-400 font-bold py-2.5 rounded-xl transition-colors text-sm border border-yellow-200 dark:border-yellow-800">
+            + Detalhes
+          </button>
+        </div>
+      </div>
+
+      <!-- VALE -->
+      <div class="bg-white dark:bg-gray-900 border-l-4 border-blue-500 p-5 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+        <h3 class="font-extrabold text-black dark:text-white text-lg mb-4 border-b border-gray-100 dark:border-gray-800 pb-2">💰 VALE ➔ Dia 15</h3>
+        <div class="space-y-4">
+          <div>
+            <p class="text-red-500 font-bold text-sm tracking-wider mb-1 flex items-center gap-1">🔴 ALINE</p>
+            <ul id="listaValeAline" class="text-sm text-gray-600 dark:text-gray-400 ml-5 list-disc marker:text-gray-300 dark:marker:text-gray-600"></ul>
+            <p class="text-red-500 font-bold text-sm mt-2 ml-5 bg-red-50 dark:bg-red-900/20 inline-block px-2.5 py-1 rounded-md">TOTAL = R$ <span id="valeAline">0,00</span></p>
+          </div>
+          <div>
+            <p class="text-blue-500 font-bold text-sm tracking-wider mb-1 flex items-center gap-1">🔵 LÉO</p>
+            <ul id="listaValeLeo" class="text-sm text-gray-600 dark:text-gray-400 ml-5 list-disc marker:text-gray-300 dark:marker:text-gray-600"></ul>
+            <p class="text-blue-500 font-bold text-sm mt-2 ml-5 bg-blue-50 dark:bg-blue-900/20 inline-block px-2.5 py-1 rounded-md">TOTAL = R$ <span id="valeLeo">0,00</span></p>
+          </div>
+        </div>
+        <hr class="my-4 border-gray-100 dark:border-gray-800" />
+        <p class="font-black text-gray-800 dark:text-white text-lg text-center bg-gray-50 dark:bg-gray-800 py-2 rounded-lg">TOTAL GERAL: R$ <span id="valeTotal">0,00</span></p>
+        <button onclick="verDetalhes('vale')" class="mt-4 w-full bg-blue-50 hover:bg-blue-100 dark:bg-gray-800 dark:hover:bg-gray-700 text-blue-700 dark:text-blue-400 font-bold py-2 rounded-xl transition-colors">
+          + Mostrar detalhes
+        </button>
+      </div>
+
+      <!-- PAGAMENTO -->
+      <div class="bg-white dark:bg-gray-900 border-l-4 border-red-500 p-5 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+        <h3 class="font-extrabold text-black dark:text-white text-lg mb-4 border-b border-gray-100 dark:border-gray-800 pb-2">📅 PAGAMENTO ➔ Dia 30</h3>
+        <div class="space-y-4">
+          <div>
+            <p class="text-red-500 font-bold text-sm tracking-wider mb-1 flex items-center gap-1">🔴 ALINE</p>
+            <ul id="listaPagAline" class="text-sm text-gray-600 dark:text-gray-400 ml-5 list-disc marker:text-gray-300 dark:marker:text-gray-600"></ul>
+            <p class="text-red-500 font-bold text-sm mt-2 ml-5 bg-red-50 dark:bg-red-900/20 inline-block px-2.5 py-1 rounded-md">TOTAL = R$ <span id="pagAline">0,00</span></p>
+          </div>
+          <div>
+            <p class="text-blue-500 font-bold text-sm tracking-wider mb-1 flex items-center gap-1">🔵 LÉO</p>
+            <ul id="listaPagLeo" class="text-sm text-gray-600 dark:text-gray-400 ml-5 list-disc marker:text-gray-300 dark:marker:text-gray-600"></ul>
+            <p class="text-blue-500 font-bold text-sm mt-2 ml-5 bg-blue-50 dark:bg-blue-900/20 inline-block px-2.5 py-1 rounded-md">TOTAL = R$ <span id="pagLeo">0,00</span></p>
+          </div>
+        </div>
+        <hr class="my-4 border-gray-100 dark:border-gray-800" />
+        <p class="font-black text-gray-800 dark:text-white text-lg text-center bg-gray-50 dark:bg-gray-800 py-2 rounded-lg">TOTAL GERAL: R$ <span id="pagTotal">0,00</span></p>
+        <button onclick="verDetalhes('pagamento')" class="mt-4 w-full bg-red-50 hover:bg-red-100 dark:bg-gray-800 dark:hover:bg-gray-700 text-red-700 dark:text-red-400 font-bold py-2 rounded-xl transition-colors">
+          + Mostrar detalhes
+        </button>
+      </div>
+
+      <!-- RESUMO CARTÕES -->
+      <div class="bg-white dark:bg-gray-900 border-l-4 border-emerald-500 p-5 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+        <h3 class="font-extrabold text-black dark:text-white text-lg mb-3">💳 RESUMO CARTÕES</h3>
+        <div class="space-y-1 text-sm md:text-base">
+          <p class="text-purple-600 font-semibold">🟣 Nubank: R$ <span id="cartaoNubank">0,00</span></p>
+          <p class="text-orange-500 font-semibold">🟠 Itaú: R$ <span id="cartaoItau">0,00</span></p>
+          <p class="text-blue-500 font-semibold">🔵 Mercado Livre: R$ <span id="cartaoMercado">0,00</span></p>
+          <hr class="my-3 border-gray-100 dark:border-gray-800" />
+          <p class="font-black text-gray-800 dark:text-white text-lg">Total Faturas: R$ <span id="cartaoTotal">0,00</span></p>
+        </div>
+        <button onclick="verDetalhes('cartoes')" class="mt-4 w-full bg-emerald-50 hover:bg-emerald-100 dark:bg-gray-800 dark:hover:bg-gray-700 text-emerald-700 dark:text-emerald-400 font-bold py-2 rounded-xl transition-colors">
+          + Mostrar detalhes
+        </button>
+      </div>
+
+      <!-- SALDO ATUAL -->
+      <div class="bg-white dark:bg-gray-900 border-l-4 border-purple-500 p-5 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+        <h3 class="font-extrabold text-black dark:text-white text-lg mb-4 border-b border-gray-100 dark:border-gray-800 pb-2">🛒 SALDO ATUAL</h3>
+        
+        <div class="space-y-3 mb-5">
+          <div class="flex justify-between items-center bg-gray-50 dark:bg-gray-800 p-3 rounded-xl border border-gray-100 dark:border-gray-700">
+            <span class="font-bold text-gray-700 dark:text-gray-300">🥖 Pão:</span>
+            <span class="font-black text-gray-900 dark:text-white text-lg">R$ <span id="saldoPao">0,00</span></span>
+          </div>
+          <div class="flex justify-between items-center bg-gray-50 dark:bg-gray-800 p-3 rounded-xl border border-gray-100 dark:border-gray-700">
+            <span class="font-bold text-gray-700 dark:text-gray-300">🐕 Ração:</span>
+            <span class="font-black text-gray-900 dark:text-white text-lg">R$ <span id="saldoRacao">0,00</span></span>
+          </div>
+          <div class="flex justify-between items-center bg-gray-50 dark:bg-gray-800 p-3 rounded-xl border border-gray-100 dark:border-gray-700">
+            <span class="font-bold text-gray-700 dark:text-gray-300">⛽ Gasolina:</span>
+            <span class="font-black text-gray-900 dark:text-white text-lg">R$ <span id="saldoGasolina">0,00</span></span>
+          </div>
+        </div>
+
+        <button onclick="abrirModalSaldo()" class="w-full bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/30 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-400 font-bold py-3 rounded-xl transition-colors shadow-sm">
+          ✏️ Atualizar Saldo
+        </button>
+        
+        <p class="text-center text-xs text-gray-400 dark:text-gray-500 mt-4 italic" id="dataUltimoSaldo">Atualizado em --/--/---- - --:--</p>
+      </div>
+
+    </div>
+
+    <!-- BOTÃO INFERIOR (Add Conta Normal) -->
+    <div class="p-5 bg-white dark:bg-gray-900 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.3)] z-10 transition-colors duration-300 flex-shrink-0">
+      <button onclick="abrirModal()" class="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-extrabold py-3.5 rounded-2xl shadow-lg transform transition-transform hover:scale-[1.02] text-lg">
+        + ADD CONTA
+      </button>
+    </div>
+
+    <!-- MODAL ADD CONTA NORMAL -->
+    <div id="modalAdd" class="escondido absolute inset-0 bg-gray-900/60 backdrop-blur-sm flex justify-center items-end pb-0 z-50">
+      <div class="bg-white dark:bg-gray-900 w-full rounded-t-3xl p-6 shadow-2xl transition-colors duration-300">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="font-black text-2xl text-gray-800 dark:text-white">Nova Conta</h3>
+          <button onclick="fecharModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-white text-2xl font-bold transition-colors">&times;</button>
+        </div>
+        <div id="modalConteudo" class="space-y-4"></div>
+      </div>
+    </div>
+
+    <!-- MODAL ADD POUPANÇA -->
+    <div id="modalPoupanca" class="escondido absolute inset-0 bg-gray-900/60 backdrop-blur-sm flex justify-center items-end pb-0 z-50">
+      <div class="bg-white dark:bg-gray-900 w-full rounded-t-3xl p-6 shadow-2xl transition-colors duration-300">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="font-black text-2xl text-gray-800 dark:text-white flex items-center gap-2">🏦 Guardar Dinheiro</h3>
+          <button onclick="fecharModalPoupanca()" class="text-gray-400 hover:text-gray-600 dark:hover:text-white text-2xl font-bold transition-colors">&times;</button>
+        </div>
+        <div class="space-y-4">
+          <p class="font-bold text-gray-700 dark:text-gray-300 mb-2">Quem está guardando?</p>
+          <select id="poupDivisao" class="w-full p-3.5 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-700 focus:ring-2 focus:ring-yellow-500 outline-none transition-all">
+            <option value="ambos">Os Dois (Metade/Metade)</option>
+            <option value="aline">Só Aline</option>
+            <option value="leo">Só Léo</option>
+          </select>
+
+          <p class="font-bold text-gray-700 dark:text-gray-300 mb-2">Qual o Valor (R$)?</p>
+          <input type="number" step="0.01" id="poupValor" placeholder="Ex: 500.00" class="w-full p-3.5 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-700 focus:ring-2 focus:ring-yellow-500 outline-none text-xl font-bold transition-all">
+
+          <p class="font-bold text-gray-700 dark:text-gray-300 mb-2">Descrição / Origem (Opcional):</p>
+          <input type="text" id="poupDesc" placeholder="Ex: Sobrou do mês, Rendimento..." class="w-full p-3.5 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-700 focus:ring-2 focus:ring-yellow-500 outline-none transition-all">
+
+          <button onclick="salvarPoupanca()" class="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white p-4 rounded-xl font-extrabold text-lg shadow-lg transform transition-transform hover:scale-[1.02] mt-4">
+            CONFIRMAR DEPÓSITO
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL ATUALIZAR SALDO ATUAL -->
+    <div id="modalSaldo" class="escondido absolute inset-0 bg-gray-900/60 backdrop-blur-sm flex justify-center items-end pb-0 z-50">
+      <div class="bg-white dark:bg-gray-900 w-full rounded-t-3xl p-6 shadow-2xl transition-colors duration-300">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="font-black text-2xl text-gray-800 dark:text-white flex items-center gap-2">🛒 Atualizar Saldo</h3>
+          <button onclick="fecharModalSaldo()" class="text-gray-400 hover:text-gray-600 dark:hover:text-white text-2xl font-bold transition-colors">&times;</button>
+        </div>
+        <div class="space-y-4">
+          <p class="font-bold text-gray-700 dark:text-gray-300 mb-2">Qual item deseja atualizar?</p>
+          <select id="saldoItem" class="w-full p-3.5 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-700 focus:ring-2 focus:ring-purple-500 outline-none transition-all">
+            <option value="Pão">🥖 Pão</option>
+            <option value="Ração">🐕 Ração</option>
+            <option value="Gasolina">⛽ Gasolina</option>
+          </select>
+
+          <p class="font-bold text-gray-700 dark:text-gray-300 mb-2">Novo Saldo Atual (R$):</p>
+          <input type="number" step="0.01" id="saldoValor" placeholder="Ex: 50.00" class="w-full p-3.5 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-700 focus:ring-2 focus:ring-purple-500 outline-none text-xl font-bold transition-all">
+
+          <button onclick="salvarNovoSaldo()" class="w-full bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white p-4 rounded-xl font-extrabold text-lg shadow-lg transform transition-transform hover:scale-[1.02] mt-4">
+            Salvar Saldo
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL MOSTRAR DETALHES -->
+    <div id="modalDetalhes" class="escondido absolute inset-0 bg-gray-900/60 backdrop-blur-sm flex justify-center items-end z-50">
+      <div class="bg-white dark:bg-gray-900 w-full h-[85%] rounded-t-3xl p-6 shadow-2xl flex flex-col transition-colors duration-300">
+        <div class="flex justify-between items-center mb-4 border-b border-gray-100 dark:border-gray-800 pb-3">
+          <h3 id="detalhesTitulo" class="font-black text-xl text-gray-800 dark:text-white">Detalhes</h3>
+          <button onclick="fecharDetalhes()" class="text-gray-400 hover:text-gray-600 dark:hover:text-white text-2xl font-bold transition-colors">&times;</button>
+        </div>
+        <div id="detalhesConteudo" class="flex-1 overflow-y-auto space-y-1 pr-2 custom-scrollbar">
+          <!-- Detalhes aqui -->
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DE AÇÃO DO ITEM E ALTERAR (Ficam iguais) -->
+    <div id="modalAcaoItem" class="escondido absolute inset-0 bg-gray-900/70 backdrop-blur-sm flex justify-center items-center z-50 p-5">
+      <div class="bg-white dark:bg-gray-900 w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center transition-colors duration-300">
+        <h3 id="acaoItemTitulo" class="font-black text-lg text-gray-800 dark:text-white mb-2">Gerenciar Lançamento</h3>
+        <p id="acaoItemSub" class="text-sm text-gray-500 dark:text-gray-400 mb-6">O que deseja fazer com este item?</p>
+        <div class="space-y-3">
+          <button onclick="abrirAlterarItem()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-3.5 rounded-xl shadow-md transition-colors">✏️ ALTERAR</button>
+          <button onclick="perguntarExcluirItem()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold p-3.5 rounded-xl shadow-md transition-colors">🗑️ EXCLUIR</button>
+          <button onclick="fecharAcaoItem()" class="w-full bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold p-3 rounded-xl transition-colors">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="modalAlterar" class="escondido absolute inset-0 bg-gray-900/70 backdrop-blur-sm flex justify-center items-end z-50">
+      <div class="bg-white dark:bg-gray-900 w-full rounded-t-3xl p-6 shadow-2xl transition-colors duration-300">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="font-black text-xl text-gray-800 dark:text-white">Alterar Lançamento</h3>
+          <button onclick="fecharAlterar()" class="text-gray-400 text-2xl font-bold">&times;</button>
+        </div>
+        <div class="space-y-4">
+          <p class="font-bold text-gray-700 dark:text-gray-300">Descrição:</p>
+          <input type="text" id="altDesc" class="w-full p-3.5 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-700 outline-none">
+          <p class="font-bold text-gray-700 dark:text-gray-300">Novo Valor (R$):</p>
+          <input type="number" step="0.01" id="altValor" class="w-full p-3.5 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-700 outline-none text-xl font-bold">
+          <p class="font-bold text-gray-700 dark:text-gray-300">Quantas parcelas gerar a partir deste mês?</p>
+          <input type="number" id="altParcelas" value="1" min="1" max="48" class="w-full p-3.5 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-700 outline-none">
+          <button onclick="salvarAlteracao()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-4 rounded-xl font-bold text-lg shadow-lg">Salvar Alteração</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const URL_PLANILHA = "https://script.google.com/macros/s/AKfycbyMFPK7YfVPJghfVlR0NLDnZjJqZuZOHHlX2A4GYW58djeyKp7euTHJDlfz0RMkV8dKWg/exec"; 
+
+    let contas = [];
+    let mesAtualIndex = 9; // 9 = Outubro
+    let anoAtual = 2026;
+    const meses = ["JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"];
+    let tempConta = {};
+    let itemSelecionado = null;
+
+    verificarTemaSalvo();
+    buscarDadosDaPlanilha();
+
+    function toggleDarkMode() {
+      document.documentElement.classList.toggle('dark');
+      const isDark = document.documentElement.classList.contains('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      atualizarIconeTema(isDark);
+    }
+
+    function verificarTemaSalvo() {
+      const isDark = localStorage.getItem('theme') === 'dark';
+      if (isDark) document.documentElement.classList.add('dark');
+      atualizarIconeTema(isDark);
+    }
+
+    function atualizarIconeTema(isDark) {
+      const icone = document.getElementById('iconeTema');
+      if(isDark) {
+        icone.innerHTML = `<svg class="w-5 h-5 text-yellow-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>`;
+      } else {
+        icone.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>`;
+      }
+    }
+
+    async function buscarDadosDaPlanilha() {
+      document.getElementById('valeTotal').innerText = "Carregando...";
+      document.getElementById('pagTotal').innerText = "Carregando...";
+      try {
+        const resposta = await fetch(URL_PLANILHA);
+        contas = await resposta.json();
+        atualizarTela();
+      } catch (erro) {
+        console.error("Erro:", erro);
+      }
+    }
+
+    function mudarMes(direcao) {
+      mesAtualIndex += direcao;
+      if (mesAtualIndex < 0) { mesAtualIndex = 11; anoAtual--; } 
+      else if (mesAtualIndex > 11) { mesAtualIndex = 0; anoAtual++; }
+      atualizarTela();
+    }
+
+    function getTop3HTML(resumoDict) {
+      let items = [];
+      for (let label in resumoDict) {
+          if (resumoDict[label] > 0) items.push({ label, val: resumoDict[label] });
+      }
+      items.sort((a, b) => b.val - a.val);
+      
+      let top3 = items.slice(0, 3);
+      let html = '';
+      
+      top3.forEach(item => {
+          html += `<li><span class="font-medium">${item.label}:</span> ${item.val.toFixed(2).replace('.', ',')}</li>`;
+      });
+      
+      if (items.length > 3) html += `<li class="text-gray-400 dark:text-gray-500 text-xs italic mt-1">+ outros</li>`;
+      if (items.length === 0) html += `<li class="text-gray-400 dark:text-gray-500 italic">Nenhum lançamento</li>`;
+      return html;
+    }
+
+    function atualizarTela() {
+      document.getElementById('mesAtual').innerText = meses[mesAtualIndex];
+      document.getElementById('anoAtual').innerText = anoAtual;
+
+      let valeAline = 0, valeLeo = 0, valeTotal = 0;
+      let pagAline = 0, pagLeo = 0, pagTotal = 0;
+      let cartaoNubank = 0, cartaoItau = 0, cartaoMercado = 0, cartaoTotal = 0;
+      let poupAline = 0, poupLeo = 0, poupTotal = 0;
+      let saldoPao = 0, saldoRacao = 0, saldoGasolina = 0;
+      let ultimaDataSaldo = "Nunca";
+
+      let dictValeAline = {}, dictValeLeo = {};
+      let dictPagAline = {}, dictPagLeo = {};
+
+      contas.forEach(conta => {
+        
+        // --- LÓGICA DO SALDO ATUAL ---
+        if (conta.tipo === 'saldo') {
+          // A lista é iterada da mais velha para a mais nova, então a última sempre será a atualizada
+          if (conta.descricao === 'Pão') saldoPao = Number(conta.valorOriginal);
+          if (conta.descricao === 'Ração') saldoRacao = Number(conta.valorOriginal);
+          if (conta.descricao === 'Gasolina') saldoGasolina = Number(conta.valorOriginal);
+          if (conta.periodo && conta.periodo !== 'ambos') ultimaDataSaldo = conta.periodo; // Usando a coluna periodo para salvar data
+        }
+        
+        // --- LÓGICA DA POUPANÇA (CUMULATIVA: Soma tudo até o mês atual) ---
+        else if (conta.tipo === 'poupanca') {
+          if (Number(conta.ano) < anoAtual || (Number(conta.ano) === anoAtual && Number(conta.mes) <= mesAtualIndex)) {
+            poupAline += Number(conta.valorAline);
+            poupLeo += Number(conta.valorLeo);
+            poupTotal += Number(conta.valorOriginal);
+          }
+        }
+        
+        // --- LÓGICA DE GASTOS (Apenas do mês atual) ---
+        else if (Number(conta.mes) === mesAtualIndex && Number(conta.ano) === anoAtual) {
+          
+          let label = conta.descricao.replace(/\s\(\d+\/\d+\)$/, ''); 
+          if (conta.tipo === 'moradia') label = 'Moradia';
+          if (conta.tipo === 'cartao') label = 'Cartões';
+
+          if (conta.periodo === 'vale') {
+            valeAline += Number(conta.valorAline);
+            valeLeo += Number(conta.valorLeo);
+            valeTotal += Number(conta.valorOriginal);
+            
+            if(Number(conta.valorAline) > 0) dictValeAline[label] = (dictValeAline[label] || 0) + Number(conta.valorAline);
+            if(Number(conta.valorLeo) > 0) dictValeLeo[label] = (dictValeLeo[label] || 0) + Number(conta.valorLeo);
+          } else if (conta.periodo === 'pagamento') {
+            pagAline += Number(conta.valorAline);
+            pagLeo += Number(conta.valorLeo);
+            pagTotal += Number(conta.valorOriginal);
+            
+            if(Number(conta.valorAline) > 0) dictPagAline[label] = (dictPagAline[label] || 0) + Number(conta.valorAline);
+            if(Number(conta.valorLeo) > 0) dictPagLeo[label] = (dictPagLeo[label] || 0) + Number(conta.valorLeo);
+          }
+
+          if (conta.tipo === 'cartao') {
+            if (conta.descricao.includes('Nubank')) cartaoNubank += Number(conta.valorOriginal);
+            else if (conta.descricao.includes('Itaú')) cartaoItau += Number(conta.valorOriginal);
+            else if (conta.descricao.includes('Mercado Livre')) cartaoMercado += Number(conta.valorOriginal);
+            cartaoTotal += Number(conta.valorOriginal);
+          }
+        }
+      });
+
+      // Renderiza Top 3
+      document.getElementById('listaValeAline').innerHTML = getTop3HTML(dictValeAline);
+      document.getElementById('listaValeLeo').innerHTML = getTop3HTML(dictValeLeo);
+      document.getElementById('listaPagAline').innerHTML = getTop3HTML(dictPagAline);
+      document.getElementById('listaPagLeo').innerHTML = getTop3HTML(dictPagLeo);
+
+      // Atualiza Valores Gastos
+      document.getElementById('valeAline').innerText = valeAline.toFixed(2).replace('.', ',');
+      document.getElementById('valeLeo').innerText = valeLeo.toFixed(2).replace('.', ',');
+      document.getElementById('valeTotal').innerText = valeTotal.toFixed(2).replace('.', ',');
+      document.getElementById('pagAline').innerText = pagAline.toFixed(2).replace('.', ',');
+      document.getElementById('pagLeo').innerText = pagLeo.toFixed(2).replace('.', ',');
+      document.getElementById('pagTotal').innerText = pagTotal.toFixed(2).replace('.', ',');
+      document.getElementById('cartaoNubank').innerText = cartaoNubank.toFixed(2).replace('.', ',');
+      document.getElementById('cartaoItau').innerText = cartaoItau.toFixed(2).replace('.', ',');
+      document.getElementById('cartaoMercado').innerText = cartaoMercado.toFixed(2).replace('.', ',');
+      document.getElementById('cartaoTotal').innerText = cartaoTotal.toFixed(2).replace('.', ',');
+
+      // Atualiza Saldo Atual
+      document.getElementById('saldoPao').innerText = saldoPao.toFixed(2).replace('.', ',');
+      document.getElementById('saldoRacao').innerText = saldoRacao.toFixed(2).replace('.', ',');
+      document.getElementById('saldoGasolina').innerText = saldoGasolina.toFixed(2).replace('.', ',');
+      document.getElementById('dataUltimoSaldo').innerText = `Atualizado em ${ultimaDataSaldo}`;
+
+      // Atualiza Poupança
+      document.getElementById('poupAline').innerText = poupAline.toFixed(2).replace('.', ',');
+      document.getElementById('poupLeo').innerText = poupLeo.toFixed(2).replace('.', ',');
+      document.getElementById('poupTotal').innerText = `R$ ${poupTotal.toFixed(2).replace('.', ',')}`;
+
+      // Lógica da Meta (De 5k em 5k)
+      let numeroMeta = Math.ceil(poupTotal / 5000);
+      if (numeroMeta === 0) numeroMeta = 1; 
+      let valorMetaAtual = numeroMeta * 5000;
+      
+      let porcentagem = (poupTotal / valorMetaAtual) * 100;
+      if (porcentagem > 100) porcentagem = 100;
+
+      document.getElementById('poupTextoMeta').innerText = `${numeroMeta}ª META: R$ ${valorMetaAtual.toLocaleString('pt-BR')}`;
+      document.getElementById('poupBarra').style.width = `${porcentagem}%`;
+    }
+
+    // --- MODAIS DO SALDO ATUAL ---
+    function abrirModalSaldo() {
+      document.getElementById('saldoValor').value = '';
+      document.getElementById('modalSaldo').classList.remove('escondido');
+    }
+
+    function fecharModalSaldo() {
+      document.getElementById('modalSaldo').classList.add('escondido');
+    }
+
+    function obterDataHoraFormatada() {
+      const data = new Date();
+      const dia = String(data.getDate()).padStart(2, '0');
+      const mes = String(data.getMonth() + 1).padStart(2, '0');
+      const ano = data.getFullYear();
+      const hora = String(data.getHours()).padStart(2, '0');
+      const min = String(data.getMinutes()).padStart(2, '0');
+      return `${dia}/${mes}/${ano} - ${hora}:${min}`;
+    }
+
+    async function salvarNovoSaldo() {
+      let item = document.getElementById('saldoItem').value;
+      let valor = parseFloat(document.getElementById('saldoValor').value.replace(',', '.'));
+
+      if(isNaN(valor)) { alert("Digite um valor válido!"); return; }
+
+      let novoSaldo = {
+        tipo: 'saldo',
+        descricao: item,
+        divisao: 'ambos',
+        periodo: obterDataHoraFormatada(), // Guardamos a data da atualização aqui!
+        mes: mesAtualIndex,
+        ano: anoAtual,
+        valorOriginal: valor,
+        valorAline: 0,
+        valorLeo: 0
+      };
+
+      contas.push(novoSaldo);
+      atualizarTela();
+      fecharModalSaldo();
+
+      try {
+        await fetch(URL_PLANILHA, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(novoSaldo)
+        });
+      } catch (erro) { console.error("Erro ao salvar saldo:", erro); }
+    }
+
+    // --- MODAIS DA POUPANÇA ---
+    function abrirModalPoupanca() {
+      document.getElementById('poupValor').value = '';
+      document.getElementById('poupDesc').value = '';
+      document.getElementById('modalPoupanca').classList.remove('escondido');
+    }
+
+    function fecharModalPoupanca() {
+      document.getElementById('modalPoupanca').classList.add('escondido');
+    }
+
+    async function salvarPoupanca() {
+      let divisao = document.getElementById('poupDivisao').value;
+      let valor = parseFloat(document.getElementById('poupValor').value.replace(',', '.'));
+      let desc = document.getElementById('poupDesc').value || "Depósito";
+
+      if(isNaN(valor)) { alert("Digite um valor válido!"); return; }
+
+      let novaPoupanca = {
+        tipo: 'poupanca',
+        descricao: desc,
+        divisao: divisao,
+        periodo: 'poupanca',
+        mes: mesAtualIndex,
+        ano: anoAtual,
+        valorOriginal: valor,
+        valorAline: 0,
+        valorLeo: 0
+      };
+
+      if (divisao === 'ambos') {
+        novaPoupanca.valorAline = valor / 2;
+        novaPoupanca.valorLeo = valor / 2;
+      } else if (divisao === 'aline') {
+        novaPoupanca.valorAline = valor;
+      } else if (divisao === 'leo') {
+        novaPoupanca.valorLeo = valor;
+      }
+
+      contas.push(novaPoupanca);
+      atualizarTela();
+      fecharModalPoupanca();
+
+      try {
+        await fetch(URL_PLANILHA, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(novaPoupanca)
+        });
+      } catch (erro) { console.error("Erro ao salvar poupança:", erro); }
+    }
+
+    // --- DETALHES ---
+    let contasFiltradasNoModal = [];
+
+    function verDetalhes(periodo) {
+      let titulo = '';
+      
+      if (periodo === 'poupanca') {
+        titulo = 'Detalhes: POUPANÇA';
+        contasFiltradasNoModal = contas.filter(c => c.tipo === 'poupanca' && (Number(c.ano) < anoAtual || (Number(c.ano) === anoAtual && Number(c.mes) <= mesAtualIndex)));
+      } else if (periodo === 'cartoes') {
+        titulo = 'Detalhes: CARTÕES';
+        contasFiltradasNoModal = contas.filter(c => Number(c.mes) === mesAtualIndex && Number(c.ano) === anoAtual && c.tipo === 'cartao');
+      } else {
+        titulo = periodo === 'vale' ? 'Detalhes: VALE ➔ Dia 15' : 'Detalhes: PAGAMENTO ➔ Dia 30';
+        contasFiltradasNoModal = contas.filter(c => Number(c.mes) === mesAtualIndex && Number(c.ano) === anoAtual && c.periodo === periodo);
+      }
+
+      document.getElementById('detalhesTitulo').innerText = titulo;
+      renderizarListaDetalhes(periodo);
+      document.getElementById('modalDetalhes').classList.remove('escondido');
+    }
+
+    function renderizarListaDetalhes(periodo) {
+      let html = '';
+      if (contasFiltradasNoModal.length === 0) {
+        document.getElementById('detalhesConteudo').innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-center mt-5">Nenhum lançamento.</p>';
+        return;
+      } 
+
+      if (periodo === 'cartoes') {
+        const bancos = ['Nubank', 'Itaú', 'Mercado Livre'];
+        bancos.forEach(banco => {
+          let contasBanco = contasFiltradasNoModal.filter(c => c.descricao.includes(banco));
+          if (contasBanco.length === 0) return;
+
+          let cor = banco === 'Nubank' ? 'text-purple-500' : banco === 'Itaú' ? 'text-orange-500' : 'text-blue-500';
+          const divisoes = [{ id: 'ambos', titulo: `${banco} Ambos` }, { id: 'aline', titulo: `${banco} só Aline` }, { id: 'leo', titulo: `${banco} só Léo` }];
+
+          divisoes.forEach(divisao => {
+            let contasDiv = contasBanco.filter(c => c.divisao === divisao.id);
+            if (contasDiv.length === 0) return;
+            let totalDiv = contasDiv.reduce((acc, c) => acc + Number(c.valorOriginal), 0);
+            
+            html += `<h4 class="font-bold ${cor} text-[15px] mt-5 mb-2">${divisao.titulo}: ${totalDiv.toFixed(2).replace('.',',')}</h4>`;
+            
+            contasDiv.forEach(c => {
+               let itemDesc = c.descricao.replace(`${banco} - `, '');
+               let indexGlobal = contas.indexOf(c);
+               html += `
+                 <div onclick="abrirAcaoItem(${indexGlobal})" class="flex justify-between items-center mb-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 p-2 -mx-2 rounded-lg transition-colors">
+                   <p class="text-gray-800 dark:text-gray-200 text-sm">${itemDesc}</p>
+                   <p class="text-gray-800 dark:text-gray-200 text-sm font-medium">${Number(c.valorOriginal).toFixed(2).replace('.',',')}</p>
+                 </div>
+               `;
+            });
+
+            if (divisao.id === 'ambos') html += `<p class="font-bold text-gray-900 dark:text-white text-sm mt-3 mb-4 italic">Metade pra cada: ${(totalDiv/2).toFixed(2).replace('.',',')}</p>`;
+            else if (divisao.id === 'aline') html += `<p class="font-bold text-gray-900 dark:text-white text-sm mt-3 mb-4 italic">Total Aline: ${totalDiv.toFixed(2).replace('.',',')}</p>`;
+            else if (divisao.id === 'leo') html += `<p class="font-bold text-gray-900 dark:text-white text-sm mt-3 mb-4 italic">Total Léo: ${totalDiv.toFixed(2).replace('.',',')}</p>`;
+          });
+        });
+
+      } else {
+        const divisoes = [
+          { id: 'ambos', titulo: `Ambos (Aline e Léo)` },
+          { id: 'aline', titulo: `Só Aline` },
+          { id: 'leo', titulo: `Só Léo` }
+        ];
+
+        divisoes.forEach(divisao => {
+          let contasDiv = contasFiltradasNoModal.filter(c => c.divisao === divisao.id);
+          if (contasDiv.length === 0) return;
+
+          html += `<h4 class="font-black text-gray-500 dark:text-gray-400 text-sm mt-5 mb-3 border-b border-gray-200 dark:border-gray-800 pb-1 uppercase tracking-wider">${divisao.titulo}</h4>`;
+          
+          contasDiv.forEach(c => {
+             let indexGlobal = contas.indexOf(c);
+             let nomeExibicao = c.descricao;
+             if(c.tipo === 'poupanca') {
+                let nomeMes = meses[Number(c.mes)].substring(0, 3);
+                nomeExibicao += ` (${nomeMes}/${c.ano})`;
+             }
+
+             html += `
+              <div onclick="abrirAcaoItem(${indexGlobal})" class="p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 flex justify-between items-center shadow-sm mb-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                <div>
+                  <p class="font-bold text-gray-800 dark:text-white text-md">${nomeExibicao}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mt-1">${c.tipo}</p>
+                </div>
+                <div class="text-right">
+                  <p class="font-bold text-gray-800 dark:text-white mb-1">R$ ${Number(c.valorOriginal).toFixed(2).replace('.',',')}</p>
+                  <p class="text-xs text-red-500 font-semibold">Aline: R$ ${Number(c.valorAline).toFixed(2).replace('.',',')}</p>
+                  <p class="text-xs text-blue-500 font-semibold">Léo: R$ ${Number(c.valorLeo).toFixed(2).replace('.',',')}</p>
+                </div>
+              </div>
+            `;
+          });
+        });
+      }
+
+      document.getElementById('detalhesConteudo').innerHTML = html;
+    }
+
+    function fecharDetalhes() {
+      document.getElementById('modalDetalhes').classList.add('escondido');
+    }
+
+    // --- CLIQUE E AÇÕES ---
+    function abrirAcaoItem(index) {
+      itemSelecionado = index;
+      const conta = contas[index];
+      document.getElementById('acaoItemTitulo').innerText = conta.descricao;
+      document.getElementById('modalAcaoItem').classList.remove('escondido');
+    }
+
+    function fecharAcaoItem() {
+      document.getElementById('modalAcaoItem').classList.add('escondido');
+    }
+
+    async function perguntarExcluirItem() {
+      const conta = contas[itemSelecionado];
+      let ehParcelado = /\(\d+\/\d+\)$/.test(conta.descricao);
+      
+      let confirmar = confirm("Tem certeza que deseja excluir este lançamento?");
+      if (!confirmar) return;
+
+      let modoExclusao = 'apenas_este';
+
+      if (ehParcelado && conta.tipo !== 'poupanca') {
+        let excluirSeguintes = confirm("Este item é parcelado.\n\nDeseja excluir ESTE E TODAS AS PARCELAS SEGUINTES?\n\n[OK] = Sim, excluir todas\n[Cancel] = Não, excluir apenas esta parcela");
+        if (excluirSeguintes) modoExclusao = 'todas_seguintes';
+      }
+
+      fecharAcaoItem();
+      fecharDetalhes();
+
+      let contaRemovida = contas[itemSelecionado];
+      if (modoExclusao === 'todas_seguintes') {
+        let baseName = contaRemovida.descricao.replace(/\s\(\d+\/\d+\)$/, '');
+        contas = contas.filter(c => {
+          let cBase = c.descricao.replace(/\s\(\d+\/\d+\)$/, '');
+          let ehMesAnoFuturo = (Number(c.ano) > Number(contaRemovida.ano)) || (Number(c.ano) === Number(contaRemovida.ano) && Number(c.mes) >= Number(contaRemovida.mes));
+          return !(cBase === baseName && ehMesAnoFuturo && c.tipo === contaRemovida.tipo && c.divisao === contaRemovida.divisao);
+        });
+      } else {
+        contas.splice(itemSelecionado, 1);
+      }
+
+      atualizarTela();
+
+      try {
+        await fetch(URL_PLANILHA, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ acao: 'excluir', descricao: contaRemovida.descricao, mes: contaRemovida.mes, ano: contaRemovida.ano, modo: modoExclusao })
+        });
+      } catch (erro) { console.error("Erro ao excluir:", erro); }
+    }
+
+    function abrirAlterarItem() {
+      fecharAcaoItem();
+      const conta = contas[itemSelecionado];
+      document.getElementById('altDesc').value = conta.descricao;
+      document.getElementById('altValor').value = conta.valorOriginal;
+      document.getElementById('altParcelas').value = 1; 
+      document.getElementById('modalAlterar').classList.remove('escondido');
+    }
+
+    function fecharAlterar() {
+      document.getElementById('modalAlterar').classList.add('escondido');
+    }
+
+    async function salvarAlteracao() {
+      const novaDesc = document.getElementById('altDesc').value;
+      const novoValor = parseFloat(document.getElementById('altValor').value.replace(',', '.'));
+      const novasParcelas = parseInt(document.getElementById('altParcelas').value) || 1;
+
+      if(!novaDesc || isNaN(novoValor)) { alert("Preencha corretamente!"); return; }
+
+      let contaAntiga = contas[itemSelecionado];
+      let ehParcelado = /\(\d+\/\d+\)$/.test(contaAntiga.descricao);
+      let modoExclusao = 'apenas_este';
+      
+      if ((ehParcelado || novasParcelas > 1) && contaAntiga.tipo !== 'poupanca') {
+         modoExclusao = 'todas_seguintes'; 
+      }
+
+      if (modoExclusao === 'todas_seguintes') {
+        let baseName = contaAntiga.descricao.replace(/\s\(\d+\/\d+\)$/, '');
+        contas = contas.filter(c => {
+          let cBase = c.descricao.replace(/\s\(\d+\/\d+\)$/, '');
+          let ehMesAnoFuturo = (Number(c.ano) > Number(contaAntiga.ano)) || (Number(c.ano) === Number(contaAntiga.ano) && Number(c.mes) >= Number(contaAntiga.mes));
+          return !(cBase === baseName && ehMesAnoFuturo && c.tipo === contaAntiga.tipo && c.divisao === contaAntiga.divisao);
+        });
+      } else {
+        contas.splice(itemSelecionado, 1);
+      }
+
+      fecharAlterar();
+      fecharDetalhes();
+
+      let contasGeradas = [];
+      let baseNameNew = novaDesc.replace(/\s\(\d+\/\d+\)$/, ''); 
+
+      for (let i = 0; i < (contaAntiga.tipo === 'poupanca' ? 1 : novasParcelas); i++) {
+        let mesDestino = (mesAtualIndex + i) % 12;
+        let anoDestino = anoAtual + Math.floor((mesAtualIndex + i) / 12);
+        
+        let descFinal = baseNameNew;
+        if (novasParcelas > 1 && contaAntiga.tipo !== 'poupanca') {
+          descFinal = `${baseNameNew} (${i + 1}/${novasParcelas})`;
+        }
+
+        let novaConta = {
+          tipo: contaAntiga.tipo,
+          descricao: descFinal,
+          divisao: contaAntiga.divisao,
+          periodo: contaAntiga.periodo,
+          mes: mesDestino,
+          ano: anoDestino,
+          valorOriginal: novoValor,
+          valorAline: 0,
+          valorLeo: 0
+        };
+
+        if (novaConta.divisao === 'ambos') {
+          novaConta.valorAline = novoValor / 2;
+          novaConta.valorLeo = novoValor / 2;
+        } else if (novaConta.divisao === 'aline') {
+          novaConta.valorAline = novoValor;
+        } else if (novaConta.divisao === 'leo') {
+          novaConta.valorLeo = novoValor;
+        }
+
+        contasGeradas.push(novaConta);
+      }
+
+      contas.push(...contasGeradas);
+      atualizarTela();
+
+      try {
+        await fetch(URL_PLANILHA, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ acao: 'excluir', descricao: contaAntiga.descricao, mes: contaAntiga.mes, ano: contaAntiga.ano, modo: modoExclusao })
+        });
+        
+        for (let c of contasGeradas) {
+          await fetch(URL_PLANILHA, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify(c)
+          });
+        }
+      } catch (erro) { console.error("Erro ao atualizar:", erro); }
+    }
+
+    // --- MODAL ADD CONTA (Despesas) ---
+    function abrirModal() {
+      tempConta = { tipo: '', descricao: '', valorOriginal: 0, divisao: 'ambos', periodo: '', parcelas: 1 };
+      document.getElementById('modalAdd').classList.remove('escondido');
+      renderPasso1();
+    }
+
+    function fecharModal() {
+      document.getElementById('modalAdd').classList.add('escondido');
+    }
+
+    const inputClass = "w-full p-3.5 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all";
+
+    function renderPasso1() {
+      const modal = document.getElementById('modalConteudo');
+      modal.innerHTML = `
+        <p class="font-bold text-gray-700 dark:text-gray-300 mb-3">Qual a categoria?</p>
+        <button onclick="escolherTipo('moradia')" class="w-full p-4 border dark:border-gray-700 rounded-xl text-left font-bold text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors mb-3 shadow-sm">🏠 Moradia (Meio a meio)</button>
+        <button onclick="escolherTipo('cartao')" class="w-full p-4 border dark:border-gray-700 rounded-xl text-left font-bold text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors mb-3 shadow-sm">💳 Cartões</button>
+        <button onclick="escolherTipo('outros')" class="w-full p-4 border dark:border-gray-700 rounded-xl text-left font-bold text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors shadow-sm">📝 Outras Contas</button>
+      `;
+    }
+
+    function escolherTipo(tipo) {
+      tempConta.tipo = tipo;
+      if(tipo === 'moradia') tempConta.divisao = 'ambos';
+      renderPasso2();
+    }
+
+    function renderPasso2() {
+      const modal = document.getElementById('modalConteudo');
+      let html = '';
+
+      if (tempConta.tipo === 'moradia') {
+        html += `
+          <p class="font-bold text-gray-700 dark:text-gray-300 mb-2">Qual despesa de moradia?</p>
+          <select id="inputDescSelect" onchange="verificarOutraMoradia()" class="${inputClass} mb-4">
+            <option value="Casa 1">Casa 1</option>
+            <option value="Água">Água</option>
+            <option value="Energia">Energia</option>
+            <option value="Internet">Internet</option>
+            <option value="Outra">Outra ?</option>
+          </select>
+          <input type="text" id="inputDescText" placeholder="Digite o nome da conta..." class="escondido ${inputClass} mb-4">
+        `;
+      } else if (tempConta.tipo === 'cartao') {
+        html += `
+          <p class="font-bold text-gray-700 dark:text-gray-300 mb-2">Qual Cartão?</p>
+          <select id="inputCartaoSelect" class="${inputClass} mb-4">
+            <option value="Nubank">Nubank</option>
+            <option value="Itaú">Itaú</option>
+            <option value="Mercado Livre">Mercado Livre</option>
+          </select>
+          <p class="font-bold text-gray-700 dark:text-gray-300 mb-2">O que foi comprado?</p>
+          <input type="text" id="inputDescText" placeholder="Ex: Máquina de lavar" class="${inputClass} mb-4">
+          
+          <p class="font-bold text-gray-700 dark:text-gray-300 mb-2">Quem vai pagar?</p>
+          <select id="inputDivisao" class="${inputClass} mb-4">
+            <option value="ambos">Leonardo / Aline (Metade pra cada)</option>
+            <option value="leo">Só Leonardo</option>
+            <option value="aline">Só Aline</option>
+          </select>
+        `;
+      } else {
+        html += `
+          <p class="font-bold text-gray-700 dark:text-gray-300 mb-2">Nome da conta:</p>
+          <input type="text" id="inputDescText" placeholder="Ex: Açougue..." class="${inputClass} mb-4">
+          <p class="font-bold text-gray-700 dark:text-gray-300 mb-2">De quem é a conta?</p>
+          <select id="inputDivisao" class="${inputClass} mb-4">
+            <option value="ambos">Dos dois (Meio a meio)</option>
+            <option value="leo">Separado (Só Léo)</option>
+            <option value="aline">Separado (Só Aline)</option>
+          </select>
+        `;
+      }
+
+      html += `
+        <p class="font-bold text-gray-700 dark:text-gray-300 mb-1 mt-2">É uma conta parcelada/recorrente?</p>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Quantos meses para frente deseja lançar? (1 = Apenas este mês)</p>
+        <input type="number" id="inputParcelas" value="1" min="1" max="48" class="${inputClass} mb-4">
+      `;
+
+      html += `<button onclick="irParaPasso3()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-xl font-bold transition-colors shadow-md mt-2">Avançar ➔</button>`;
+      modal.innerHTML = html;
+    }
+
+    function verificarOutraMoradia() {
+      const select = document.getElementById('inputDescSelect').value;
+      const texto = document.getElementById('inputDescText');
+      if (select === 'Outra') texto.classList.remove('escondido');
+      else texto.classList.add('escondido');
+    }
+
+    function irParaPasso3() {
+      if (tempConta.tipo === 'moradia') {
+        const select = document.getElementById('inputDescSelect').value;
+        tempConta.descricao = (select === 'Outra') ? document.getElementById('inputDescText').value : select;
+      } else if (tempConta.tipo === 'cartao') {
+        const cartao = document.getElementById('inputCartaoSelect').value;
+        const item = document.getElementById('inputDescText').value;
+        tempConta.descricao = `${cartao} - ${item}`;
+        tempConta.divisao = document.getElementById('inputDivisao').value;
+      } else {
+        tempConta.descricao = document.getElementById('inputDescText').value;
+        tempConta.divisao = document.getElementById('inputDivisao').value;
+      }
+      
+      tempConta.parcelas = parseInt(document.getElementById('inputParcelas').value) || 1;
+
+      if(!tempConta.descricao) { alert("Preencha a descrição!"); return; }
+      renderPasso3();
+    }
+
+    function renderPasso3() {
+      const modal = document.getElementById('modalConteudo');
+      const txtValor = tempConta.parcelas > 1 ? `Valor de CADA parcela (R$):` : `Qual o valor (R$)?`;
+
+      modal.innerHTML = `
+        <p class="font-bold text-gray-700 dark:text-gray-300 mb-2">${txtValor}</p>
+        <input type="number" step="0.01" id="inputValor" placeholder="Ex: 150.00" class="${inputClass} text-xl font-bold mb-5">
+        
+        <p class="font-bold text-gray-700 dark:text-gray-300 mb-3">Essa conta entra no Vale ou Pagamento?</p>
+        <select id="inputPeriodo" class="${inputClass} mb-6">
+          <option value="vale">Vale (Dia 15)</option>
+          <option value="pagamento">Pagamento (Dia 30)</option>
+        </select>
+        
+        <button onclick="salvarContaFinal()" class="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white p-4 rounded-xl font-extrabold text-lg shadow-lg transform transition-transform hover:scale-[1.02]">
+          Salvar na Nuvem ☁️
+        </button>
+      `;
+    }
+
+    async function salvarContaFinal() {
+      const valorInput = document.getElementById('inputValor').value;
+      if(!valorInput) { alert("Digite o valor!"); return; }
+      
+      const valorTotal = parseFloat(valorInput.replace(',', '.'));
+      const periodoInput = document.getElementById('inputPeriodo').value;
+      
+      let parcelas = tempConta.parcelas || 1;
+      let contasGeradas = [];
+
+      for (let i = 0; i < parcelas; i++) {
+        let mesDestino = (mesAtualIndex + i) % 12;
+        let anoDestino = anoAtual + Math.floor((mesAtualIndex + i) / 12);
+        
+        let descFinal = tempConta.descricao;
+        if (parcelas > 1) descFinal = `${descFinal} (${i + 1}/${parcelas})`;
+
+        let novaConta = {
+          tipo: tempConta.tipo,
+          descricao: descFinal,
+          divisao: tempConta.divisao,
+          periodo: periodoInput,
+          mes: mesDestino,
+          ano: anoDestino,
+          valorOriginal: valorTotal,
+          valorAline: 0,
+          valorLeo: 0
+        };
+
+        if (novaConta.divisao === 'ambos') {
+          novaConta.valorAline = valorTotal / 2;
+          novaConta.valorLeo = valorTotal / 2;
+        } else if (novaConta.divisao === 'aline') {
+          novaConta.valorAline = valorTotal;
+        } else if (novaConta.divisao === 'leo') {
+          novaConta.valorLeo = valorTotal;
+        }
+
+        contasGeradas.push(novaConta);
+      }
+
+      contas.push(...contasGeradas);
+      atualizarTela();
+      fecharModal();
+      
+      for (let c of contasGeradas) {
+        try {
+          await fetch(URL_PLANILHA, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify(c)
+          });
+        } catch (erro) { console.error("Erro ao salvar:", erro); }
+      }
+    }
+  </script>
+</body>
+</html>
