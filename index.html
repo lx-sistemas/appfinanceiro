@@ -29,7 +29,6 @@
     
     <!-- CABEÇALHO E MÊS FIXOS -->
     <div class="flex-shrink-0 z-20 bg-slate-50 dark:bg-black shadow-sm overflow-hidden">
-      <!-- Adicionado ID "topBar" e transition para efeito de ocultar/mostrar -->
       <div id="topBar" class="bg-gradient-to-r from-blue-600 to-indigo-700 p-5 rounded-b-3xl shadow-lg relative z-10 transition-all duration-300 ease-in-out">
         <div class="flex justify-between items-center">
           <button onclick="refreshApp(this)" class="p-2.5 bg-white/20 text-white rounded-full hover:bg-white/30 transition-all shadow-sm backdrop-blur-sm flex items-center justify-center">
@@ -201,15 +200,11 @@
             
             <hr class="border-gray-100 dark:border-gray-800 my-4">
             
-            <!-- ENTRADAS EXTRAS (13º, Férias, etc) -->
             <div class="flex justify-between items-center mb-2">
                <h4 class="font-bold text-gray-700 dark:text-gray-300 text-sm uppercase">Extras deste mês</h4>
                <button onclick="abrirModalRendaExtra()" class="bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 font-bold py-1.5 px-3 rounded-lg text-xs transition-colors shadow-sm">+ Adicionar</button>
             </div>
-            <div id="listaRendasExtras" class="space-y-2">
-               <!-- JS injeta entradas extras do mes -->
-            </div>
-
+            <div id="listaRendasExtras" class="space-y-2"></div>
           </div>
         </div>
 
@@ -296,7 +291,6 @@
       <div class="bg-white dark:bg-gray-900 w-full rounded-t-3xl p-6 shadow-2xl"><div class="flex justify-between items-center mb-6"><h3 class="font-black text-2xl text-gray-800 dark:text-white">Nova Conta</h3><button onclick="fecharModal()" class="text-gray-400 text-2xl font-bold">&times;</button></div><div id="modalConteudo" class="space-y-4"></div></div>
     </div>
     
-    <!-- NOVO MODAL: ADICIONAR ENTRADA EXTRA -->
     <div id="modalRendaExtra" class="escondido absolute inset-0 bg-gray-900/70 backdrop-blur-sm flex justify-center items-end pb-0 z-50">
       <div class="bg-white dark:bg-gray-900 w-full rounded-t-3xl p-6 shadow-2xl">
         <div class="flex justify-between items-center mb-6">
@@ -310,16 +304,12 @@
              <option value="leo">Só Léo</option>
              <option value="ambos">Ambos (Meio a meio)</option>
           </select>
-          
           <p class="font-bold text-gray-700 dark:text-gray-300">Descrição (Ex: 13º, Férias, Bônus):</p>
           <input type="text" id="rendaExtraDesc" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white outline-none">
-          
           <p class="font-bold text-gray-700 dark:text-gray-300">Valor (R$):</p>
           <input type="number" step="0.01" id="rendaExtraValor" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white text-xl font-bold outline-none">
-          
           <p class="font-bold text-gray-700 dark:text-gray-300">Gerar por quantos meses (1 = Só este mês)?</p>
           <input type="number" id="rendaExtraParcelas" value="1" min="1" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white outline-none">
-          
           <button onclick="salvarRendaExtra()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-4 rounded-xl font-extrabold text-lg shadow-md" id="btnSalvarRendaExtra">Salvar Entrada ☁️</button>
         </div>
       </div>
@@ -332,18 +322,22 @@
         <p class="font-bold text-gray-700 dark:text-gray-300">Origem (Opcional):</p><input type="text" id="poupDesc" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white">
         <button onclick="salvarPoupanca()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white p-4 rounded-xl font-extrabold text-lg" id="btnSalvarPoupanca">CONFIRMAR</button></div></div>
     </div>
+    
     <div id="modalSaldo" class="escondido absolute inset-0 bg-gray-900/70 backdrop-blur-sm flex justify-center items-end pb-0 z-50">
       <div class="bg-white dark:bg-gray-900 w-full rounded-t-3xl p-6 shadow-2xl"><div class="flex justify-between items-center mb-6"><h3 class="font-black text-2xl text-gray-800 dark:text-white">💰 Atualizar Saldo</h3><button onclick="fecharModalSaldo()" class="text-gray-400 text-2xl font-bold">&times;</button></div><div class="space-y-4">
         <p class="font-bold text-gray-700 dark:text-gray-300">Qual item?</p><select id="saldoItem" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white"><option value="Pão">🥖 Pão</option><option value="Ração">🐕 Ração</option><option value="Gasolina">⛽ Gasolina</option></select>
         <p class="font-bold text-gray-700 dark:text-gray-300">Novo Saldo (R$):</p><input type="number" step="0.01" id="saldoValor" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white text-xl font-bold">
         <button onclick="salvarNovoSaldo()" class="w-full bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-xl font-extrabold text-lg" id="btnSalvarSaldo">Salvar Saldo</button></div></div>
     </div>
+    
     <div id="modalDetalhes" class="escondido absolute inset-0 bg-gray-900/70 backdrop-blur-sm flex justify-center items-end z-50">
       <div class="bg-white dark:bg-gray-900 w-full h-[85%] rounded-t-3xl p-6 shadow-2xl flex flex-col"><div class="flex justify-between items-center mb-4 border-b border-gray-100 dark:border-gray-800 pb-3"><h3 id="detalhesTitulo" class="font-black text-xl text-gray-800 dark:text-white">Detalhes</h3><button onclick="fecharDetalhes()" class="text-gray-400 text-2xl font-bold">&times;</button></div><div id="detalhesConteudo" class="flex-1 overflow-y-auto space-y-1 pr-2 custom-scrollbar"></div></div>
     </div>
+    
     <div id="modalAcaoItem" class="escondido absolute inset-0 bg-gray-900/80 backdrop-blur-sm flex justify-center items-center z-50 p-5">
       <div class="bg-white dark:bg-gray-900 w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center"><h3 id="acaoItemTitulo" class="font-black text-lg text-gray-800 dark:text-white mb-2">Gerenciar</h3><p class="text-sm text-gray-500 mb-6">O que deseja fazer?</p><div class="space-y-3"><button onclick="abrirAlterarItem()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-3.5 rounded-xl shadow-md">✏️ ALTERAR</button><button onclick="perguntarExcluirItem()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold p-3.5 rounded-xl shadow-md">🗑️ EXCLUIR</button><button onclick="fecharAcaoItem()" class="w-full bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold p-3 rounded-xl">Cancelar</button></div></div>
     </div>
+    
     <div id="modalAlterar" class="escondido absolute inset-0 bg-gray-900/70 backdrop-blur-sm flex justify-center items-end z-50">
       <div class="bg-white dark:bg-gray-900 w-full rounded-t-3xl p-6 shadow-2xl"><div class="flex justify-between items-center mb-4"><h3 class="font-black text-xl text-gray-800 dark:text-white">Alterar</h3><button onclick="fecharAlterar()" class="text-gray-400 text-2xl font-bold">&times;</button></div><div class="space-y-4"><p class="font-bold text-gray-700 dark:text-gray-300">Descrição:</p><input type="text" id="altDesc" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white"><p class="font-bold text-gray-700 dark:text-gray-300">Novo Valor (R$):</p><input type="number" step="0.01" id="altValor" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white"><p class="font-bold text-gray-700 dark:text-gray-300">Gerar quantas parcelas pra frente?</p><input type="number" id="altParcelas" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white"><button onclick="salvarAlteracao()" class="w-full bg-emerald-600 text-white p-4 rounded-xl font-bold" id="btnSalvarAlt">Salvar Alteração</button></div></div>
     </div>
@@ -354,7 +348,7 @@
     const URL_PLANILHA = "https://script.google.com/macros/s/AKfycbyMFPK7YfVPJghfVlR0NLDnZjJqZuZOHHlX2A4GYW58djeyKp7euTHJDlfz0RMkV8dKWg/exec"; 
 
     let contas = [];
-    let mesAtualIndex = 9; // Outubro
+    let mesAtualIndex = 9; 
     let anoAtual = 2026;
     const meses = ["JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"];
     let tempConta = {}, itemSelecionado = null;
@@ -390,12 +384,11 @@
       atualizarTela(); 
     }
 
-    // OTIMIZAÇÃO: ROLAGEM E SWIPE APRIMORADOS
+    // OTIMIZAÇÃO: ROLAGEM E SWIPE
     const swipeArea = document.getElementById('swipe-area');
     const topBar = document.getElementById('topBar');
     
     let touchstartX = 0, touchstartY = 0, touchendX = 0, touchendY = 0;
-    
     swipeArea.addEventListener('touchstart', e => { 
         touchstartX = e.changedTouches[0].screenX; 
         touchstartY = e.changedTouches[0].screenY; 
@@ -404,10 +397,8 @@
     swipeArea.addEventListener('touchend', e => { 
        touchendX = e.changedTouches[0].screenX; 
        touchendY = e.changedTouches[0].screenY; 
-       
        let diffX = Math.abs(touchendX - touchstartX);
        let diffY = Math.abs(touchendY - touchstartY);
-
        if (diffX > diffY && diffX > 100) {
            if (touchendX < touchstartX) mudarAba(Math.min(abaAtual + 1, 3));
            if (touchendX > touchstartX) mudarAba(Math.max(abaAtual - 1, 0));
@@ -463,7 +454,6 @@
       atualizarTela();
     }
 
-    // LISTAR OS TOP 5 NO RESUMO AO INVÉS DE TOP 3
     function getTop5HTML(resumoDict) {
       let items = [];
       for (let label in resumoDict) { if (resumoDict[label] > 0) items.push({ label, val: resumoDict[label] }); }
@@ -475,9 +465,7 @@
       return html;
     }
 
-    let rendaAlineMes = 0, rendaLeoMes = 0;
-    let tetoAlineMes = 0, tetoLeoMes = 0;
-    let gastosAlineMes = 0, gastosLeoMes = 0;
+    let rendaAlineMes = 0, rendaLeoMes = 0, tetoAlineMes = 0, tetoLeoMes = 0, gastosAlineMes = 0, gastosLeoMes = 0;
 
     function atualizarTela() {
       document.getElementById('mesAtual').innerText = meses[mesAtualIndex];
@@ -499,15 +487,12 @@
       let ultimaDataSaldo = "Nunca";
       
       let dictValeAline = {}, dictValeLeo = {}, dictPagAline = {}, dictPagLeo = {};
-      rendaAlineMes = 0; rendaLeoMes = 0;
-      tetoAlineMes = 0; tetoLeoMes = 0;
-      gastosAlineMes = 0; gastosLeoMes = 0;
+      rendaAlineMes = 0; rendaLeoMes = 0; tetoAlineMes = 0; tetoLeoMes = 0; gastosAlineMes = 0; gastosLeoMes = 0;
 
       let extratoItens = [];
       let rendasExtrasMesAtuais = [];
 
       contas.forEach((conta, index) => {
-        // --- RENDAS FIXAS E TETOS ---
         if (conta.tipo === 'renda') {
            let val = Number(conta.valorOriginal) || 0;
            if(conta.descricao === 'Renda_Vale_Aline') { document.getElementById('rendaValeAline').value = val; rendaAlineMes += val; }
@@ -518,32 +503,27 @@
            if(conta.descricao === 'Teto_Aline') { document.getElementById('tetoAline').value = val; tetoAlineMes = val; }
            if(conta.descricao === 'Teto_Leo') { document.getElementById('tetoLeo').value = val; tetoLeoMes = val; }
         }
-        // --- RENDAS EXTRAS ---
         else if (conta.tipo === 'renda_extra') {
            if (Number(conta.mes) === mesAtualIndex && Number(conta.ano) === anoAtual) {
               let val = Number(conta.valorOriginal) || 0;
               if (conta.divisao === 'aline') rendaAlineMes += val;
               else if (conta.divisao === 'leo') rendaLeoMes += val;
               else { rendaAlineMes += val/2; rendaLeoMes += val/2; }
-              
               rendasExtrasMesAtuais.push({ idx: index, conta: conta });
               extratoItens.push({ idx: index, conta: conta, isRenda: true });
            }
         }
-        // --- SALDO ATUAL ---
         else if (conta.tipo === 'saldo') {
           if (conta.descricao === 'Pão') saldoPao = Number(conta.valorOriginal);
           if (conta.descricao === 'Ração') saldoRacao = Number(conta.valorOriginal);
           if (conta.descricao === 'Gasolina') saldoGasolina = Number(conta.valorOriginal);
           if (conta.periodo && conta.periodo !== 'ambos') ultimaDataSaldo = conta.periodo; 
         }
-        // --- POUPANÇA ---
         else if (conta.tipo === 'poupanca') {
           if (Number(conta.ano) < anoAtual || (Number(conta.ano) === anoAtual && Number(conta.mes) <= mesAtualIndex)) {
             poupAline += Number(conta.valorAline); poupLeo += Number(conta.valorLeo); poupTotal += Number(conta.valorOriginal);
           }
         }
-        // --- GASTOS DO MÊS ATUAL ---
         else if (Number(conta.mes) === mesAtualIndex && Number(conta.ano) === anoAtual) {
           let label = conta.descricao.replace(/\s\(\d+\/\d+\)$/, ''); 
           if (conta.tipo === 'moradia') label = 'Moradia';
@@ -570,12 +550,10 @@
             else if (conta.descricao.includes('Mercado Livre')) cartaoMercado += Number(conta.valorOriginal);
             cartaoTotal += Number(conta.valorOriginal);
           }
-
           extratoItens.push({ idx: index, conta: conta, isRenda: false });
         }
       });
 
-      // Renderiza as Rendas Extras na tela DADOS
       let rendasExtrasHTML = '';
       if(rendasExtrasMesAtuais.length === 0) {
           rendasExtrasHTML = '<p class="text-xs text-gray-400 italic">Nenhuma entrada extra adicionada neste mês.</p>';
@@ -595,10 +573,8 @@
 
       let tetoA = tetoAlineMes || rendaAlineMes;
       let tetoL = tetoLeoMes || rendaLeoMes;
-
       let livreAline = tetoA - gastosAlineMes; 
       let livreLeo = tetoL - gastosLeoMes;
-      
       let azulAline = Math.max(0, rendaAlineMes - Math.max(gastosAlineMes, tetoA)); 
       let azulLeo = Math.max(0, rendaLeoMes - Math.max(gastosLeoMes, tetoL));
 
@@ -607,7 +583,6 @@
       document.getElementById('homeGastosAline').innerText = gastosAlineMes.toFixed(2).replace('.',',');
       document.getElementById('homeSaldoAline').innerText = livreAline.toFixed(2).replace('.',',');
       document.getElementById('homeReservaAline').innerText = azulAline.toFixed(2).replace('.',',');
-
       document.getElementById('homeEntradasLeo').innerText = rendaLeoMes.toFixed(2).replace('.',',');
       document.getElementById('homeTetoLeo').innerText = tetoLeoMes > 0 ? tetoLeoMes.toFixed(2).replace('.',',') : 'Não def.';
       document.getElementById('homeGastosLeo').innerText = gastosLeoMes.toFixed(2).replace('.',',');
@@ -629,24 +604,14 @@
       document.getElementById('cartaoMercado').innerText = cartaoMercado.toFixed(2).replace('.', ',');
       document.getElementById('cartaoTotal').innerText = cartaoTotal.toFixed(2).replace('.', ',');
 
-      // Renderiza Extrato
       let transacoesHTML = '';
       if(extratoItens.length === 0) {
          transacoesHTML = '<p class="text-center text-gray-500 text-sm mt-5">Nenhuma movimentação neste mês.</p>';
       } else {
          extratoItens.reverse().forEach(item => {
             let iconeTransacao = item.conta.tipo === 'cartao' ? '💳' : (item.conta.tipo === 'moradia' ? '🏠' : '📝');
-            let corValor = "text-red-500";
-            let sinal = "-";
-            let descPeriodo = item.conta.periodo;
-            
-            if (item.isRenda) {
-                iconeTransacao = '💵';
-                corValor = "text-emerald-500";
-                sinal = "+";
-                descPeriodo = "Renda Extra";
-            }
-
+            let corValor = "text-red-500"; let sinal = "-"; let descPeriodo = item.conta.periodo;
+            if (item.isRenda) { iconeTransacao = '💵'; corValor = "text-emerald-500"; sinal = "+"; descPeriodo = "Renda Extra"; }
             transacoesHTML += `
               <div onclick="abrirAcaoItem(${item.idx})" class="bg-white dark:bg-gray-800 p-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-between cursor-pointer mb-3">
                 <div class="flex items-center gap-3">
@@ -684,42 +649,41 @@
 
     function renderizarGraficos() {
        if (abaAtual !== 0) return; 
-
-       const corGastos = '#ef4444';
-       const corLivre = '#10b981';
-       const corReserva = '#3b82f6';
-
-       let tetoA = tetoAlineMes || rendaAlineMes;
-       let restanteTetoA = Math.max(0, tetoA - gastosAlineMes); 
-       let azulA = Math.max(0, rendaAlineMes - Math.max(gastosAlineMes, tetoA)); 
-
+       const corGastos = '#ef4444'; const corLivre = '#10b981'; const corReserva = '#3b82f6';
+       let tetoA = tetoAlineMes || rendaAlineMes; let restanteTetoA = Math.max(0, tetoA - gastosAlineMes); let azulA = Math.max(0, rendaAlineMes - Math.max(gastosAlineMes, tetoA)); 
        const ctxAline = document.getElementById('chartAline').getContext('2d');
        if(chartAlineInst) chartAlineInst.destroy();
-       chartAlineInst = new Chart(ctxAline, {
-           type: 'doughnut',
-           data: { datasets: [{ data: [gastosAlineMes, restanteTetoA, azulA], backgroundColor: [corGastos, corLivre, corReserva], borderWidth: 0 }] },
-           options: { cutout: '75%', responsive: true, maintainAspectRatio: false, plugins: { tooltip: { enabled: false } } }
-       });
+       chartAlineInst = new Chart(ctxAline, { type: 'doughnut', data: { datasets: [{ data: [gastosAlineMes, restanteTetoA, azulA], backgroundColor: [corGastos, corLivre, corReserva], borderWidth: 0 }] }, options: { cutout: '75%', responsive: true, maintainAspectRatio: false, plugins: { tooltip: { enabled: false } } } });
 
-       let tetoL = tetoLeoMes || rendaLeoMes;
-       let restanteTetoL = Math.max(0, tetoL - gastosLeoMes); 
-       let azulL = Math.max(0, rendaLeoMes - Math.max(gastosLeoMes, tetoL)); 
-
+       let tetoL = tetoLeoMes || rendaLeoMes; let restanteTetoL = Math.max(0, tetoL - gastosLeoMes); let azulL = Math.max(0, rendaLeoMes - Math.max(gastosLeoMes, tetoL)); 
        const ctxLeo = document.getElementById('chartLeo').getContext('2d');
        if(chartLeoInst) chartLeoInst.destroy();
-       chartLeoInst = new Chart(ctxLeo, {
-           type: 'doughnut',
-           data: { datasets: [{ data: [gastosLeoMes, restanteTetoL, azulL], backgroundColor: [corGastos, corLivre, corReserva], borderWidth: 0 }] },
-           options: { cutout: '75%', responsive: true, maintainAspectRatio: false, plugins: { tooltip: { enabled: false } } }
-       });
+       chartLeoInst = new Chart(ctxLeo, { type: 'doughnut', data: { datasets: [{ data: [gastosLeoMes, restanteTetoL, azulL], backgroundColor: [corGastos, corLivre, corReserva], borderWidth: 0 }] }, options: { cutout: '75%', responsive: true, maintainAspectRatio: false, plugins: { tooltip: { enabled: false } } } });
+    }
+
+    // --- FUNÇÕES DE ENVIO SEQUENCIAL COM RETENTATIVA AUTOMÁTICA (BLINDAGEM 100%) ---
+    async function fetchComRetry(url, options, retries = 3) {
+        for (let i = 0; i < retries; i++) {
+            try {
+                let response = await fetch(url, options);
+                if (response.ok) return response;
+            } catch (e) {}
+            await new Promise(r => setTimeout(r, 500));
+        }
+        return fetch(url, options);
+    }
+
+    async function executarLoteFetch(itens, mapeador) {
+        for (let i = 0; i < itens.length; i++) {
+            let payload = JSON.stringify(mapeador(itens[i]));
+            await fetchComRetry(URL_PLANILHA, { method: "POST", body: payload });
+            await new Promise(r => setTimeout(r, 150)); // Micro-pausa de segurança para não travar o Google
+        }
     }
 
     // --- FUNÇÕES DA ABA 4 (RENDAS, TETOS E RESUMOS) ---
     async function salvarRendasFixas() {
-      const btn = document.getElementById('btnSalvarRendas');
-      btn.innerText = "Salvando (Aguarde)...";
-      btn.disabled = true;
-      
+      const btn = document.getElementById('btnSalvarRendas'); btn.innerText = "Salvando (Aguarde)..."; btn.disabled = true;
       const novasRendas = [
         { desc: 'Renda_Vale_Aline', val: document.getElementById('rendaValeAline').value },
         { desc: 'Renda_Vale_Leo', val: document.getElementById('rendaValeLeo').value },
@@ -729,212 +693,92 @@
       ];
 
       contas = contas.filter(c => !(c.tipo === 'renda' && c.descricao.startsWith('Renda_')));
-      
       for(let r of novasRendas) {
         let valFloat = parseFloat(r.val.replace(',', '.'));
         if(!isNaN(valFloat)) {
            let obj = { tipo: 'renda', descricao: r.desc, divisao: 'nenhuma', periodo: 'mensal', mes: 99, ano: 9999, valorOriginal: valFloat, valorAline: 0, valorLeo: 0 };
            contas.push(obj);
-           try {
-             await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: r.desc, mes: 99, ano: 9999, modo: 'apenas_este' }) });
-             await new Promise(res => setTimeout(res, 400)); 
-             await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify(obj) });
-             await new Promise(res => setTimeout(res, 400)); 
-           } catch(e) {}
+           try { await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: r.desc, mes: 99, ano: 9999, modo: 'apenas_este' }) }); await new Promise(res => setTimeout(res, 400)); await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify(obj) }); await new Promise(res => setTimeout(res, 400)); } catch(e) {}
         } else {
-           try {
-             await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: r.desc, mes: 99, ano: 9999, modo: 'apenas_este' }) });
-             await new Promise(res => setTimeout(res, 400));
-           } catch(e) {}
+           try { await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: r.desc, mes: 99, ano: 9999, modo: 'apenas_este' }) }); await new Promise(res => setTimeout(res, 400)); } catch(e) {}
         }
       }
-      
-      atualizarTela();
-      btn.innerText = "Salvo com sucesso!";
-      btn.disabled = false;
-      setTimeout(() => { btn.innerText = "Salvar Entradas Fixas"; }, 3000);
+      atualizarTela(); btn.innerText = "Salvo com sucesso!"; btn.disabled = false; setTimeout(() => { btn.innerText = "Salvar Entradas Fixas"; }, 3000);
     }
 
     async function salvarTetoFixas() {
-      const btn = document.getElementById('btnSalvarTeto');
-      btn.innerText = "Salvando (Aguarde)...";
-      btn.disabled = true;
-      
-      const novosTetos = [
-        { desc: 'Teto_Aline', val: document.getElementById('tetoAline').value },
-        { desc: 'Teto_Leo', val: document.getElementById('tetoLeo').value }
-      ];
-
+      const btn = document.getElementById('btnSalvarTeto'); btn.innerText = "Salvando (Aguarde)..."; btn.disabled = true;
+      const novosTetos = [ { desc: 'Teto_Aline', val: document.getElementById('tetoAline').value }, { desc: 'Teto_Leo', val: document.getElementById('tetoLeo').value } ];
       contas = contas.filter(c => !(c.tipo === 'renda' && c.descricao.startsWith('Teto_')));
-      
       for(let r of novosTetos) {
         let valFloat = parseFloat(r.val.replace(',', '.'));
         if(!isNaN(valFloat)) {
            let obj = { tipo: 'renda', descricao: r.desc, divisao: 'nenhuma', periodo: 'mensal', mes: 99, ano: 9999, valorOriginal: valFloat, valorAline: 0, valorLeo: 0 };
            contas.push(obj);
-           try {
-             await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: r.desc, mes: 99, ano: 9999, modo: 'apenas_este' }) });
-             await new Promise(res => setTimeout(res, 400)); 
-             await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify(obj) });
-             await new Promise(res => setTimeout(res, 400)); 
-           } catch(e) {}
+           try { await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: r.desc, mes: 99, ano: 9999, modo: 'apenas_este' }) }); await new Promise(res => setTimeout(res, 400)); await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify(obj) }); await new Promise(res => setTimeout(res, 400)); } catch(e) {}
         } else {
-           try {
-             await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: r.desc, mes: 99, ano: 9999, modo: 'apenas_este' }) });
-             await new Promise(res => setTimeout(res, 400));
-           } catch(e) {}
+           try { await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: r.desc, mes: 99, ano: 9999, modo: 'apenas_este' }) }); await new Promise(res => setTimeout(res, 400)); } catch(e) {}
         }
       }
-      
-      atualizarTela();
-      btn.innerText = "Salvo com sucesso!";
-      btn.disabled = false;
-      setTimeout(() => { btn.innerText = "Salvar Teto de Gastos"; }, 3000);
+      atualizarTela(); btn.innerText = "Salvo com sucesso!"; btn.disabled = false; setTimeout(() => { btn.innerText = "Salvar Teto de Gastos"; }, 3000);
     }
 
-    function abrirModalRendaExtra() {
-        document.getElementById('rendaExtraDesc').value = '';
-        document.getElementById('rendaExtraValor').value = '';
-        document.getElementById('rendaExtraParcelas').value = '1';
-        document.getElementById('modalRendaExtra').classList.remove('escondido');
-    }
-    
-    function fecharModalRendaExtra() {
-        document.getElementById('modalRendaExtra').classList.add('escondido');
-    }
+    function abrirModalRendaExtra() { document.getElementById('rendaExtraDesc').value = ''; document.getElementById('rendaExtraValor').value = ''; document.getElementById('rendaExtraParcelas').value = '1'; document.getElementById('modalRendaExtra').classList.remove('escondido'); }
+    function fecharModalRendaExtra() { document.getElementById('modalRendaExtra').classList.add('escondido'); }
 
     async function salvarRendaExtra() {
-        let divisao = document.getElementById('rendaExtraPessoa').value;
-        let desc = document.getElementById('rendaExtraDesc').value;
-        let valor = parseFloat(document.getElementById('rendaExtraValor').value.replace(',', '.'));
-        let parc = parseInt(document.getElementById('rendaExtraParcelas').value) || 1;
-        
+        let divisao = document.getElementById('rendaExtraPessoa').value; let desc = document.getElementById('rendaExtraDesc').value; let valor = parseFloat(document.getElementById('rendaExtraValor').value.replace(',', '.')); let parc = parseInt(document.getElementById('rendaExtraParcelas').value) || 1;
         if(!desc || isNaN(valor)) return alert("Preencha a descrição e o valor!");
         
-        const btn = document.getElementById('btnSalvarRendaExtra'); 
-        btn.innerText = "Salvando (Aguarde)..."; 
-        btn.disabled = true;
-        
+        const btn = document.getElementById('btnSalvarRendaExtra'); btn.innerText = "Salvando (Aguarde)..."; btn.disabled = true;
         let geradas = [];
         for (let i = 0; i < parc; i++) {
-            let mD = (mesAtualIndex + i) % 12; 
-            let aD = anoAtual + Math.floor((mesAtualIndex + i) / 12);
-            let descF = desc; 
-            if (parc > 1) descF = `${descF} (${i + 1}/${parc})`;
-            
-            let nc = { 
-               tipo: 'renda_extra', 
-               descricao: descF, 
-               divisao: divisao, 
-               periodo: 'mensal',
-               mes: mD, 
-               ano: aD, 
-               valorOriginal: valor, 
-               valorAline: 0, 
-               valorLeo: 0 
-            };
-            
-            if (nc.divisao === 'ambos') { 
-               nc.valorAline = valor / 2; nc.valorLeo = valor / 2; 
-            } else if (nc.divisao === 'aline') {
-               nc.valorAline = valor; 
-            } else {
-               nc.valorLeo = valor;
-            }
-            
+            let mD = (mesAtualIndex + i) % 12; let aD = anoAtual + Math.floor((mesAtualIndex + i) / 12);
+            let descF = desc; if (parc > 1) descF = `${descF} (${i + 1}/${parc})`;
+            let nc = { tipo: 'renda_extra', descricao: descF, divisao: divisao, periodo: 'mensal', mes: mD, ano: aD, valorOriginal: valor, valorAline: 0, valorLeo: 0 };
+            if (nc.divisao === 'ambos') { nc.valorAline = valor / 2; nc.valorLeo = valor / 2; } else if (nc.divisao === 'aline') { nc.valorAline = valor; } else { nc.valorLeo = valor; }
             geradas.push(nc);
         }
+        contas.push(...geradas); atualizarTela(); 
         
-        contas.push(...geradas); 
-        atualizarTela(); 
-        
-        for (let c of geradas) { 
-           try { 
-              await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify(c) }); 
-              await new Promise(res => setTimeout(res, 400)); 
-           } catch(e){} 
-        }
-        
-        fecharModalRendaExtra(); 
-        btn.innerText = "Salvar Entrada ☁️"; 
-        btn.disabled = false;
+        try { await executarLoteFetch(geradas, (c) => c); } catch(e){} 
+        fecharModalRendaExtra(); btn.innerText = "Salvar Entrada ☁️"; btn.disabled = false;
     }
 
     function preencherSubItensResumo() {
-      const tipo = document.getElementById('resumoTipoSel').value;
-      const subSelect = document.getElementById('resumoSubItemSel');
-      const valorAtual = subSelect.value; 
-
+      const tipo = document.getElementById('resumoTipoSel').value; const subSelect = document.getElementById('resumoSubItemSel'); const valorAtual = subSelect.value; 
       subSelect.innerHTML = '<option value="todos">Qualquer item (Todos)</option>';
-
       if (tipo === 'todos') return;
-
-      let descricoes = new Set();
-      let ignorar = ['renda', 'saldo', 'poupanca', 'renda_extra'];
-
+      let descricoes = new Set(); let ignorar = ['renda', 'saldo', 'poupanca', 'renda_extra'];
       contas.forEach(c => {
           let ehFuturo = (Number(c.ano) > anoAtual || (Number(c.ano) === anoAtual && Number(c.mes) >= mesAtualIndex));
-          
           if (ehFuturo && (tipo === 'todos' ? !ignorar.includes(c.tipo) : c.tipo === tipo)) {
               let descBase = c.descricao.replace(/\s\(\d+\/\d+\)$/, ''); 
-              if (tipo === 'cartao') {
-                  if (descBase.includes('Nubank')) descricoes.add('Nubank');
-                  else if (descBase.includes('Itaú')) descricoes.add('Itaú');
-                  else if (descBase.includes('Mercado Livre')) descricoes.add('Mercado Livre');
-                  else descricoes.add(descBase);
-              } else {
-                  descricoes.add(descBase);
-              }
+              if (tipo === 'cartao') { if (descBase.includes('Nubank')) descricoes.add('Nubank'); else if (descBase.includes('Itaú')) descricoes.add('Itaú'); else if (descBase.includes('Mercado Livre')) descricoes.add('Mercado Livre'); else descricoes.add(descBase); } else { descricoes.add(descBase); }
           }
       });
-
-      Array.from(descricoes).sort().forEach(d => {
-          let selected = (d === valorAtual) ? 'selected' : '';
-          subSelect.innerHTML += `<option value="${d}" ${selected}>${d}</option>`;
-      });
+      Array.from(descricoes).sort().forEach(d => { let selected = (d === valorAtual) ? 'selected' : ''; subSelect.innerHTML += `<option value="${d}" ${selected}>${d}</option>`; });
     }
 
     function gerarResumoDividas() {
-      const tipoSel = document.getElementById('resumoTipoSel').value; 
-      const subSel = document.getElementById('resumoSubItemSel').value; 
-      const pessoaSel = document.getElementById('resumoPessoaSel').value; 
-
+      const tipoSel = document.getElementById('resumoTipoSel').value; const subSel = document.getElementById('resumoSubItemSel').value; const pessoaSel = document.getElementById('resumoPessoaSel').value; 
       let ignorar = ['renda', 'saldo', 'poupanca', 'renda_extra'];
-
       let dividasFuturas = contas.filter(c => {
          if (ignorar.includes(c.tipo)) return false;
-
          let ehFuturo = (Number(c.ano) > anoAtual || (Number(c.ano) === anoAtual && Number(c.mes) >= mesAtualIndex));
          if (!ehFuturo) return false;
-
          let matchTipo = (tipoSel === 'todos' || c.tipo === tipoSel);
          let matchPessoa = (pessoaSel === 'todos' || c.divisao === pessoaSel);
          let matchSub = true;
-
-         if (subSel !== 'todos') {
-             matchSub = c.descricao.includes(subSel);
-         }
-
+         if (subSel !== 'todos') { matchSub = c.descricao.includes(subSel); }
          return matchTipo && matchPessoa && matchSub;
       });
-
-      let totalDívida = 0;
-      let html = '';
-
-      if(dividasFuturas.length === 0) {
-         html = '<p class="text-sm text-emerald-500 font-bold mt-4 text-center">Nenhuma conta ou dívida futura encontrada para este filtro!</p>';
-      } else {
+      let totalDívida = 0; let html = '';
+      if(dividasFuturas.length === 0) { html = '<p class="text-sm text-emerald-500 font-bold mt-4 text-center">Nenhuma conta ou dívida futura encontrada para este filtro!</p>'; } else {
          dividasFuturas.sort((a,b) => (Number(a.ano) - Number(b.ano)) || (Number(a.mes) - Number(b.mes)));
          dividasFuturas.forEach(c => {
             totalDívida += Number(c.valorOriginal);
-            html += `
-              <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg flex justify-between items-center text-sm border border-gray-200 dark:border-gray-700">
-                <div>
-                   <p class="font-bold text-gray-800 dark:text-gray-200">${c.descricao}</p>
-                   <p class="text-[10px] text-gray-500 uppercase">${meses[Number(c.mes)].substring(0,3)}/${c.ano}</p>
-                </div>
-                <p class="font-bold text-red-500">R$ ${Number(c.valorOriginal).toFixed(2).replace('.',',')}</p>
-              </div>`;
+            html += `<div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg flex justify-between items-center text-sm border border-gray-200 dark:border-gray-700"><div><p class="font-bold text-gray-800 dark:text-gray-200">${c.descricao}</p><p class="text-[10px] text-gray-500 uppercase">${meses[Number(c.mes)].substring(0,3)}/${c.ano}</p></div><p class="font-bold text-red-500">R$ ${Number(c.valorOriginal).toFixed(2).replace('.',',')}</p></div>`;
          });
          html = `<div class="bg-red-50 dark:bg-red-900/30 p-3 rounded-xl border border-red-200 dark:border-red-800 mb-4 text-center"><p class="text-sm text-red-800 dark:text-red-300 font-bold">Total previsto:</p><p class="text-2xl text-red-600 dark:text-red-400 font-black">R$ ${totalDívida.toFixed(2).replace('.',',')}</p></div>` + html;
       }
@@ -947,14 +791,10 @@
     function obterDataHoraFormatada() { const d=new Date(); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} - ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
     
     async function salvarNovoSaldo() {
-      let item = document.getElementById('saldoItem').value;
-      let valor = parseFloat(document.getElementById('saldoValor').value.replace(',', '.'));
-      if(isNaN(valor)) return alert("Digite um valor!");
+      let item = document.getElementById('saldoItem').value; let valor = parseFloat(document.getElementById('saldoValor').value.replace(',', '.')); if(isNaN(valor)) return alert("Digite um valor!");
       let novoSaldo = { tipo: 'saldo', descricao: item, divisao: 'ambos', periodo: obterDataHoraFormatada(), mes: mesAtualIndex, ano: anoAtual, valorOriginal: valor, valorAline: 0, valorLeo: 0 };
-      
       const btn = document.getElementById('btnSalvarSaldo'); btn.innerText = "Salvando..."; btn.disabled = true;
-      contas = contas.filter(c => !(c.tipo === 'saldo' && c.descricao === item));
-      contas.push(novoSaldo); atualizarTela();
+      contas = contas.filter(c => !(c.tipo === 'saldo' && c.descricao === item)); contas.push(novoSaldo); atualizarTela();
       try { await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify(novoSaldo) }); } catch(e){}
       fecharModalSaldo(); btn.innerText = "Salvar Saldo"; btn.disabled = false;
     }
@@ -967,7 +807,6 @@
       if(isNaN(valor)) return alert("Digite um valor!");
       let novaPoup = { tipo: 'poupanca', descricao: desc, divisao: divisao, periodo: 'poupanca', mes: mesAtualIndex, ano: anoAtual, valorOriginal: valor, valorAline: 0, valorLeo: 0 };
       if (divisao === 'ambos') { novaPoup.valorAline = valor/2; novaPoup.valorLeo = valor/2; } else if (divisao === 'aline') novaPoup.valorAline = valor; else novaPoup.valorLeo = valor;
-      
       const btn = document.getElementById('btnSalvarPoupanca'); btn.innerText = "Salvando..."; btn.disabled = true;
       contas.push(novaPoup); atualizarTela(); 
       try { await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify(novaPoup) }); } catch(e){}
@@ -980,7 +819,6 @@
     function renderPasso1() { document.getElementById('modalConteudo').innerHTML = `<p class="font-bold text-gray-700 dark:text-gray-300 mb-3">Qual a categoria?</p><button onclick="escolherTipo('moradia')" class="w-full p-4 border dark:border-gray-700 rounded-xl text-left font-bold text-gray-700 dark:text-white mb-3">🏠 Moradia (Meio a meio)</button><button onclick="escolherTipo('cartao')" class="w-full p-4 border dark:border-gray-700 rounded-xl text-left font-bold text-gray-700 dark:text-white mb-3">💳 Cartões</button><button onclick="escolherTipo('outros')" class="w-full p-4 border dark:border-gray-700 rounded-xl text-left font-bold text-gray-700 dark:text-white">📝 Outras Contas</button>`; }
     function escolherTipo(tipo) { tempConta.tipo = tipo; if(tipo === 'moradia') tempConta.divisao = 'ambos'; renderPasso2(); }
     
-    // ATUALIZAÇÃO: CARTÃO AGORA SÓ TEM ITAÚ
     function renderPasso2() {
       let html = '';
       if(tempConta.tipo==='moradia') { html += `<p class="font-bold text-gray-700 dark:text-gray-300 mb-2">Qual despesa?</p><select id="inputDescSelect" onchange="const t=document.getElementById('inputDescText'); if(this.value==='Outra')t.classList.remove('escondido'); else t.classList.add('escondido');" class="${inputClass} mb-4"><option>Casa 1</option><option>Água</option><option>Energia</option><option>Internet</option><option value="Outra">Outra ?</option></select><input type="text" id="inputDescText" placeholder="Nome da conta..." class="escondido ${inputClass} mb-4">`; }
@@ -990,18 +828,13 @@
       document.getElementById('modalConteudo').innerHTML = html;
     }
     
-    // ATUALIZAÇÃO: DATA DE CARTÃO SEMPRE FIXA DIA 30
     function irParaPasso3() {
       if (tempConta.tipo === 'moradia') { const s = document.getElementById('inputDescSelect').value; tempConta.descricao = (s === 'Outra') ? document.getElementById('inputDescText').value : s; } 
       else if (tempConta.tipo === 'cartao') { tempConta.descricao = `${document.getElementById('inputCartaoSelect').value} - ${document.getElementById('inputDescText').value}`; tempConta.divisao = document.getElementById('inputDivisao').value; } 
       else { tempConta.descricao = document.getElementById('inputDescText').value; tempConta.divisao = document.getElementById('inputDivisao').value; }
       tempConta.parcelas = parseInt(document.getElementById('inputParcelas').value) || 1;
       if(!tempConta.descricao) return alert("Preencha a descrição!");
-      
-      let periodoHTML = tempConta.tipo === 'cartao' 
-          ? `<select id="inputPeriodo" class="${inputClass} mb-6"><option value="pagamento" selected>Pagamento (Dia 30)</option></select>` 
-          : `<select id="inputPeriodo" class="${inputClass} mb-6"><option value="vale">Vale (Dia 15)</option><option value="pagamento">Pagamento (Dia 30)</option></select>`;
-          
+      let periodoHTML = tempConta.tipo === 'cartao' ? `<select id="inputPeriodo" class="${inputClass} mb-6"><option value="pagamento" selected>Pagamento (Dia 30)</option></select>` : `<select id="inputPeriodo" class="${inputClass} mb-6"><option value="vale">Vale (Dia 15)</option><option value="pagamento">Pagamento (Dia 30)</option></select>`;
       document.getElementById('modalConteudo').innerHTML = `<p class="font-bold text-gray-700 dark:text-gray-300 mb-2">${tempConta.parcelas > 1 ? 'Valor de CADA parcela (R$):' : 'Qual o valor (R$)?'}</p><input type="number" step="0.01" id="inputValor" class="${inputClass} text-xl font-bold mb-5"><p class="font-bold text-gray-700 dark:text-gray-300 mb-3">Vale ou Pagamento?</p>${periodoHTML}<button onclick="salvarContaFinal()" class="w-full bg-emerald-600 text-white p-4 rounded-xl font-extrabold text-lg" id="btnSalvarLote">Salvar na Nuvem ☁️</button>`;
     }
     
@@ -1018,13 +851,7 @@
         geradas.push(nc);
       }
       contas.push(...geradas); atualizarTela(); 
-      
-      for (let c of geradas) { 
-         try { 
-            await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify(c) }); 
-            await new Promise(res => setTimeout(res, 400)); 
-         } catch(e){} 
-      }
+      try { await executarLoteFetch(geradas, (c) => c); } catch(e){} 
       fecharModal(); btn.innerText = "Salvar na Nuvem"; btn.disabled = false;
     }
 
@@ -1060,38 +887,59 @@
     }
     
     function fecharDetalhes() { document.getElementById('modalDetalhes').classList.add('escondido'); }
-    function abrirAcaoItem(i) { if (!contas[i]) return; itemSelecionado = i; document.getElementById('acaoItemTitulo').innerText = contas[i].descricao; document.getElementById('modalAcaoItem').classList.remove('escondido'); }
+    function abrirAcaoItem(i) { itemSelecionado = i; document.getElementById('acaoItemTitulo').innerText = contas[i].descricao; document.getElementById('modalAcaoItem').classList.remove('escondido'); }
     function fecharAcaoItem() { document.getElementById('modalAcaoItem').classList.add('escondido'); }
     
     async function perguntarExcluirItem() {
-      let c = contas[itemSelecionado]; if (!c) { fecharAcaoItem(); return; }
-      let ehP = /\(\d+\/\d+\)$/.test(c.descricao); if (!confirm("Excluir?")) return;
-      let mE = 'apenas_este'; if (ehP && c.tipo !== 'poupanca') if (confirm("Excluir TODAS seguintes?")) mE = 'todas_seguintes';
-      fecharAcaoItem(); fecharDetalhes(); let cR = contas[itemSelecionado]; if (!cR) return;
+      if (itemSelecionado === null || !contas[itemSelecionado]) return;
+      let cR = contas[itemSelecionado]; let ehP = /\(\d+\/\d+\)$/.test(cR.descricao); if (!confirm("Excluir?")) return;
+      let mE = 'apenas_este'; if (ehP && cR.tipo !== 'poupanca') if (confirm("Excluir TODAS seguintes?")) mE = 'todas_seguintes';
+      
+      fecharAcaoItem(); fecharDetalhes(); 
+      let itensParaExcluir = [cR];
+
       if (mE === 'todas_seguintes') {
         let bN = cR.descricao.replace(/\s\(\d+\/\d+\)$/, '');
-        contas = contas.filter(x => { let xB = x.descricao.replace(/\s\(\d+\/\d+\)$/, ''); let fut = (Number(x.ano) > Number(cR.ano)) || (Number(x.ano) === Number(cR.ano) && Number(x.mes) >= Number(cR.mes)); return !(xB === bN && fut && x.tipo === cR.tipo && x.divisao === cR.divisao); });
-      } else contas.splice(itemSelecionado, 1);
+        itensParaExcluir = contas.filter(x => { 
+            let xB = x.descricao.replace(/\s\(\d+\/\d+\)$/, ''); 
+            let fut = (Number(x.ano) > Number(cR.ano)) || (Number(x.ano) === Number(cR.ano) && Number(x.mes) >= Number(cR.mes)); 
+            return (xB === bN && fut && x.tipo === cR.tipo && x.divisao === cR.divisao); 
+        });
+        contas = contas.filter(x => !itensParaExcluir.includes(x));
+      } else {
+        contas.splice(itemSelecionado, 1);
+      }
       atualizarTela(); 
-      try { await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: cR.descricao, mes: cR.mes, ano: cR.ano, modo: mE }) }); } catch(e){}
+      
+      try { 
+         if (ehP && mE === 'todas_seguintes') {
+             await executarLoteFetch(itensParaExcluir, (item) => ({ acao: 'excluir', descricao: item.descricao, mes: item.mes, ano: item.ano, modo: 'apenas_este' }));
+         } else {
+             await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: cR.descricao, mes: cR.mes, ano: cR.ano, modo: mE }) }); 
+         }
+      } catch(e){}
+      
+      itemSelecionado = null;
     }
 
     function abrirAlterarItem() { 
-      let c = contas[itemSelecionado]; if (!c) { fecharAcaoItem(); return; }
-      fecharAcaoItem(); document.getElementById('altDesc').value = c.descricao; document.getElementById('altValor').value = c.valorOriginal; document.getElementById('altParcelas').value = 1; document.getElementById('modalAlterar').classList.remove('escondido'); 
+        if (itemSelecionado === null || !contas[itemSelecionado]) return;
+        fecharAcaoItem(); 
+        document.getElementById('altDesc').value = contas[itemSelecionado].descricao; 
+        document.getElementById('altValor').value = contas[itemSelecionado].valorOriginal; 
+        document.getElementById('altParcelas').value = 1; 
+        document.getElementById('modalAlterar').classList.remove('escondido'); 
     }
+    
     function fecharAlterar() { document.getElementById('modalAlterar').classList.add('escondido'); }
     
     async function salvarAlteracao() {
+      if (itemSelecionado === null || !contas[itemSelecionado]) return;
       let nD = document.getElementById('altDesc').value; let nV = parseFloat(document.getElementById('altValor').value.replace(',', '.')); let nP = parseInt(document.getElementById('altParcelas').value) || 1;
       if(!nD || isNaN(nV)) return alert("Preencha!"); 
       
-      const btn = document.getElementById('btnSalvarAlt'); 
-      if (btn.disabled) return;
-      let cA = contas[itemSelecionado];
-      if (!cA) { fecharAlterar(); fecharDetalhes(); return alert("Item não encontrado!"); }
-      btn.innerText = "Salvando (Aguarde)..."; btn.disabled = true;
-      let ehP = /\(\d+\/\d+\)$/.test(cA.descricao); let mE = 'apenas_este';
+      const btn = document.getElementById('btnSalvarAlt'); btn.innerText = "Salvando (Aguarde)..."; btn.disabled = true;
+      let cA = contas[itemSelecionado]; let ehP = /\(\d+\/\d+\)$/.test(cA.descricao); let mE = 'apenas_este';
       
       if (ehP && nP === 1) {
           if(confirm("Este item é parcelado.\n\nDeseja alterar TODAS as parcelas seguintes também?\n\n[OK] = Alterar esta e as futuras\n[Cancelar] = Alterar APENAS esta (Mantém o nome)")) {
@@ -1101,37 +949,43 @@
           mE = 'todas_seguintes';
       }
 
+      let itensParaExcluir = [cA];
       if (mE === 'todas_seguintes') { 
           let bN = cA.descricao.replace(/\s\(\d+\/\d+\)$/, ''); 
-          contas = contas.filter(x => { let xB = x.descricao.replace(/\s\(\d+\/\d+\)$/, ''); let fut = (Number(x.ano) > Number(cA.ano)) || (Number(x.ano) === Number(cA.ano) && Number(x.mes) >= Number(cA.mes)); return !(xB === bN && fut && x.tipo === cA.tipo && x.divisao === cA.divisao); }); 
-      } else contas.splice(itemSelecionado, 1);
+          itensParaExcluir = contas.filter(x => { 
+              let xB = x.descricao.replace(/\s\(\d+\/\d+\)$/, ''); 
+              let fut = (Number(x.ano) > Number(cA.ano)) || (Number(x.ano) === Number(cA.ano) && Number(x.mes) >= Number(cA.mes)); 
+              return (xB === bN && fut && x.tipo === cA.tipo && x.divisao === cA.divisao); 
+          }); 
+          contas = contas.filter(x => !itensParaExcluir.includes(x)); 
+      } else { 
+          contas.splice(itemSelecionado, 1); 
+      }
       
       fecharAlterar(); fecharDetalhes(); 
       let geradas = []; 
-      
       let bNew = nD;
       if (mE === 'todas_seguintes') bNew = nD.replace(/\s\(\d+\/\d+\)$/, ''); 
       
       for (let i = 0; i < (cA.tipo === 'poupanca' ? 1 : nP); i++) {
         let mD = (mesAtualIndex + i) % 12; let aD = anoAtual + Math.floor((mesAtualIndex + i) / 12); 
-        let dF = bNew; 
-        if (nP > 1 && cA.tipo !== 'poupanca') dF = `${bNew} (${i + 1}/${nP})`; 
-        
+        let dF = bNew; if (nP > 1 && cA.tipo !== 'poupanca') dF = `${bNew} (${i + 1}/${nP})`; 
         let nC = { tipo: cA.tipo, descricao: dF, divisao: cA.divisao, periodo: cA.periodo, mes: mD, ano: aD, valorOriginal: nV, valorAline: 0, valorLeo: 0 };
         if (nC.divisao === 'ambos') { nC.valorAline = nV / 2; nC.valorLeo = nV / 2; } else if (nC.divisao === 'aline') nC.valorAline = nV; else nC.valorLeo = nV; geradas.push(nC);
       }
       contas.push(...geradas); atualizarTela();
       
       try { 
-         await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: cA.descricao, mes: cA.mes, ano: cA.ano, modo: mE }) }); 
-         await new Promise(r => setTimeout(r, 400));
-         for(let c of geradas) {
-             await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify(c) }); 
-             await new Promise(r => setTimeout(r, 400));
+         if (ehP && mE === 'todas_seguintes') {
+             await executarLoteFetch(itensParaExcluir, (item) => ({ acao: 'excluir', descricao: item.descricao, mes: item.mes, ano: item.ano, modo: 'apenas_este' }));
+         } else {
+             await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: cA.descricao, mes: cA.mes, ano: cA.ano, modo: mE }) }); 
          }
+         await executarLoteFetch(geradas, (c) => c);
       } catch(e){}
       
       btn.innerText = "Salvar Alteração"; btn.disabled = false;
+      itemSelecionado = null;
     }
   </script>
 </body>
