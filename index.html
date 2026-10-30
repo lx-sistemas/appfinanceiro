@@ -492,6 +492,8 @@
       let extratoItens = [];
       let rendasExtrasMesAtuais = [];
 
+      let dataAtualView = anoAtual * 12 + mesAtualIndex;
+
       contas.forEach((conta, index) => {
         if (conta.tipo === 'renda') {
            let val = Number(conta.valorOriginal) || 0;
@@ -524,33 +526,49 @@
             poupAline += Number(conta.valorAline); poupLeo += Number(conta.valorLeo); poupTotal += Number(conta.valorOriginal);
           }
         }
-        else if (Number(conta.mes) === mesAtualIndex && Number(conta.ano) === anoAtual) {
-          let label = conta.descricao.replace(/\s\(\d+\/\d+\)$/, ''); 
-          if (conta.tipo === 'moradia') label = 'Moradia';
-          if (conta.tipo === 'cartao') label = 'Cartões';
+        else {
+          // LOGICA DE CONTAS NORMAIS E FIXAS
+          let isFixa = conta.descricao.includes('(Fixo)');
+          let dataCriacao = Number(conta.ano) * 12 + Number(conta.mes);
+          let ehMesAtual = false;
 
-          let valA = Number(conta.valorAline) || 0;
-          let valL = Number(conta.valorLeo) || 0;
-          gastosAlineMes += valA;
-          gastosLeoMes += valL;
-
-          if (conta.periodo === 'vale') {
-            valeAline += valA; valeLeo += valL; valeTotal += Number(conta.valorOriginal);
-            if(valA > 0) dictValeAline[label] = (dictValeAline[label] || 0) + valA;
-            if(valL > 0) dictValeLeo[label] = (dictValeLeo[label] || 0) + valL;
-          } else if (conta.periodo === 'pagamento') {
-            pagAline += valA; pagLeo += valL; pagTotal += Number(conta.valorOriginal);
-            if(valA > 0) dictPagAline[label] = (dictPagAline[label] || 0) + valA;
-            if(valL > 0) dictPagLeo[label] = (dictPagLeo[label] || 0) + valL;
+          if (isFixa) {
+              let dataFim = 999999;
+              let matchFim = conta.descricao.match(/\(Fixo até (\d{2})\/(\d{4})\)/);
+              if (matchFim) dataFim = parseInt(matchFim[2]) * 12 + (parseInt(matchFim[1]) - 1);
+              ehMesAtual = (dataAtualView >= dataCriacao && dataAtualView <= dataFim);
+          } else {
+              ehMesAtual = (Number(conta.mes) === mesAtualIndex && Number(conta.ano) === anoAtual);
           }
 
-          if (conta.tipo === 'cartao') {
-            if (conta.descricao.includes('Nubank')) cartaoNubank += Number(conta.valorOriginal);
-            else if (conta.descricao.includes('Itaú')) cartaoItau += Number(conta.valorOriginal);
-            else if (conta.descricao.includes('Mercado Livre')) cartaoMercado += Number(conta.valorOriginal);
-            cartaoTotal += Number(conta.valorOriginal);
+          if (ehMesAtual) {
+            let label = conta.descricao.replace(/\s\(\d+\/\d+\)$/, '').replace(/\s\(Fixo.*\)/, ''); 
+            if (conta.tipo === 'moradia') label = 'Moradia';
+            if (conta.tipo === 'cartao') label = 'Cartões';
+
+            let valA = Number(conta.valorAline) || 0;
+            let valL = Number(conta.valorLeo) || 0;
+            gastosAlineMes += valA;
+            gastosLeoMes += valL;
+
+            if (conta.periodo === 'vale') {
+              valeAline += valA; valeLeo += valL; valeTotal += Number(conta.valorOriginal);
+              if(valA > 0) dictValeAline[label] = (dictValeAline[label] || 0) + valA;
+              if(valL > 0) dictValeLeo[label] = (dictValeLeo[label] || 0) + valL;
+            } else if (conta.periodo === 'pagamento') {
+              pagAline += valA; pagLeo += valL; pagTotal += Number(conta.valorOriginal);
+              if(valA > 0) dictPagAline[label] = (dictPagAline[label] || 0) + valA;
+              if(valL > 0) dictPagLeo[label] = (dictPagLeo[label] || 0) + valL;
+            }
+
+            if (conta.tipo === 'cartao') {
+              if (conta.descricao.includes('Nubank')) cartaoNubank += Number(conta.valorOriginal);
+              else if (conta.descricao.includes('Itaú')) cartaoItau += Number(conta.valorOriginal);
+              else if (conta.descricao.includes('Mercado Livre')) cartaoMercado += Number(conta.valorOriginal);
+              cartaoTotal += Number(conta.valorOriginal);
+            }
+            extratoItens.push({ idx: index, conta: conta, isRenda: false });
           }
-          extratoItens.push({ idx: index, conta: conta, isRenda: false });
         }
       });
 
@@ -611,13 +629,18 @@
          extratoItens.reverse().forEach(item => {
             let iconeTransacao = item.conta.tipo === 'cartao' ? '💳' : (item.conta.tipo === 'moradia' ? '🏠' : '📝');
             let corValor = "text-red-500"; let sinal = "-"; let descPeriodo = item.conta.periodo;
+            
+            let badgeFixa = item.conta.descricao.includes('(Fixo)') ? '<span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">🔄 FIXA</span>' : '';
+            let labelExibicao = item.conta.descricao.replace(/\s\(Fixo.*\)/, '');
+
             if (item.isRenda) { iconeTransacao = '💵'; corValor = "text-emerald-500"; sinal = "+"; descPeriodo = "Renda Extra"; }
+            
             transacoesHTML += `
               <div onclick="abrirAcaoItem(${item.idx})" class="bg-white dark:bg-gray-800 p-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-between cursor-pointer mb-3">
                 <div class="flex items-center gap-3">
                   <div class="text-2xl">${iconeTransacao}</div>
                   <div>
-                    <p class="font-bold text-gray-800 dark:text-gray-200 text-sm">${item.conta.descricao}</p>
+                    <p class="font-bold text-gray-800 dark:text-gray-200 text-sm">${labelExibicao} ${badgeFixa}</p>
                     <p class="text-[10px] text-gray-500 uppercase">${item.conta.divisao} • ${descPeriodo}</p>
                   </div>
                 </div>
@@ -661,7 +684,7 @@
        chartLeoInst = new Chart(ctxLeo, { type: 'doughnut', data: { datasets: [{ data: [gastosLeoMes, restanteTetoL, azulL], backgroundColor: [corGastos, corLivre, corReserva], borderWidth: 0 }] }, options: { cutout: '75%', responsive: true, maintainAspectRatio: false, plugins: { tooltip: { enabled: false } } } });
     }
 
-    // --- FUNÇÕES DE ENVIO SEQUENCIAL COM RETENTATIVA AUTOMÁTICA (BLINDAGEM 100%) ---
+    // --- FUNÇÕES DE ENVIO SEQUENCIAL COM RETENTATIVA AUTOMÁTICA ---
     async function fetchComRetry(url, options, retries = 3) {
         for (let i = 0; i < retries; i++) {
             try {
@@ -673,31 +696,28 @@
         return fetch(url, options);
     }
 
-    // NOVA FUNÇÃO DE LOTE: GERA A BARRA DE PROGRESSO VISUAL NO BOTÃO
+    // PROGRESSO VISUAL NO BOTÃO
     async function executarLoteFetch(itens, mapeador, btnElement = null, prefixo = "Salvando") {
         if (btnElement && !btnElement.classList.contains('relative')) {
             btnElement.classList.add('relative', 'overflow-hidden');
         }
-
         for (let i = 0; i < itens.length; i++) {
             let payload = JSON.stringify(mapeador(itens[i]));
             await fetchComRetry(URL_PLANILHA, { method: "POST", body: payload });
-            
             if (btnElement) {
                 let progresso = Math.round(((i + 1) / itens.length) * 100);
-                // Preenche o fundo do botão como uma barra de progresso (width: X%)
                 btnElement.innerHTML = `
                     <div class="absolute left-0 top-0 bottom-0 bg-black/20 dark:bg-white/20 transition-all duration-200" style="width: ${progresso}%"></div>
                     <span class="relative z-10">${prefixo} ${progresso}% <span class="text-xs opacity-80">(${i + 1}/${itens.length})</span></span>
                 `;
             }
-            
-            await new Promise(r => setTimeout(r, 150)); // Micro-pausa
+            await new Promise(r => setTimeout(r, 150)); 
         }
     }
 
-    // --- FUNÇÕES DA ABA 4 (RENDAS, TETOS E RESUMOS) ---
+    // --- FUNÇÕES DA ABA 4 (RENDAS E RESUMOS) ---
     async function salvarRendasFixas() {
+      // ... (Mantido igual)
       const btn = document.getElementById('btnSalvarRendas'); btn.innerText = "Salvando (Aguarde)..."; btn.disabled = true;
       const novasRendas = [
         { desc: 'Renda_Vale_Aline', val: document.getElementById('rendaValeAline').value },
@@ -706,7 +726,6 @@
         { desc: 'Renda_Pag_Leo', val: document.getElementById('rendaPagLeo').value },
         { desc: 'Renda_Pensao', val: document.getElementById('rendaPensao').value }
       ];
-
       contas = contas.filter(c => !(c.tipo === 'renda' && c.descricao.startsWith('Renda_')));
       for(let r of novasRendas) {
         let valFloat = parseFloat(r.val.replace(',', '.'));
@@ -722,6 +741,7 @@
     }
 
     async function salvarTetoFixas() {
+      // ... (Mantido igual)
       const btn = document.getElementById('btnSalvarTeto'); btn.innerText = "Salvando (Aguarde)..."; btn.disabled = true;
       const novosTetos = [ { desc: 'Teto_Aline', val: document.getElementById('tetoAline').value }, { desc: 'Teto_Leo', val: document.getElementById('tetoLeo').value } ];
       contas = contas.filter(c => !(c.tipo === 'renda' && c.descricao.startsWith('Teto_')));
@@ -770,10 +790,24 @@
       subSelect.innerHTML = '<option value="todos">Qualquer item (Todos)</option>';
       if (tipo === 'todos') return;
       let descricoes = new Set(); let ignorar = ['renda', 'saldo', 'poupanca', 'renda_extra'];
+      let dataAtualView = anoAtual * 12 + mesAtualIndex;
+      
       contas.forEach(c => {
-          let ehFuturo = (Number(c.ano) > anoAtual || (Number(c.ano) === anoAtual && Number(c.mes) >= mesAtualIndex));
+          let isFixa = c.descricao.includes('(Fixo)');
+          let dataConta = Number(c.ano) * 12 + Number(c.mes);
+          let ehFuturo = false;
+          
+          if (!isFixa) {
+              ehFuturo = (dataConta >= dataAtualView);
+          } else {
+              let dataFim = 999999;
+              let matchFim = c.descricao.match(/\(Fixo até (\d{2})\/(\d{4})\)/);
+              if (matchFim) dataFim = parseInt(matchFim[2]) * 12 + (parseInt(matchFim[1]) - 1);
+              ehFuturo = (dataFim >= dataAtualView);
+          }
+
           if (ehFuturo && (tipo === 'todos' ? !ignorar.includes(c.tipo) : c.tipo === tipo)) {
-              let descBase = c.descricao.replace(/\s\(\d+\/\d+\)$/, ''); 
+              let descBase = c.descricao.replace(/\s\(\d+\/\d+\)$/, '').replace(/\s\(Fixo.*\)/, ''); 
               if (tipo === 'cartao') { if (descBase.includes('Nubank')) descricoes.add('Nubank'); else if (descBase.includes('Itaú')) descricoes.add('Itaú'); else if (descBase.includes('Mercado Livre')) descricoes.add('Mercado Livre'); else descricoes.add(descBase); } else { descricoes.add(descBase); }
           }
       });
@@ -783,9 +817,24 @@
     function gerarResumoDividas() {
       const tipoSel = document.getElementById('resumoTipoSel').value; const subSel = document.getElementById('resumoSubItemSel').value; const pessoaSel = document.getElementById('resumoPessoaSel').value; 
       let ignorar = ['renda', 'saldo', 'poupanca', 'renda_extra'];
+      let dataAtualView = anoAtual * 12 + mesAtualIndex;
+
       let dividasFuturas = contas.filter(c => {
          if (ignorar.includes(c.tipo)) return false;
-         let ehFuturo = (Number(c.ano) > anoAtual || (Number(c.ano) === anoAtual && Number(c.mes) >= mesAtualIndex));
+         
+         let isFixa = c.descricao.includes('(Fixo)');
+         let dataConta = Number(c.ano) * 12 + Number(c.mes);
+         let ehFuturo = false;
+          
+         if (!isFixa) {
+             ehFuturo = (dataConta >= dataAtualView);
+         } else {
+             let dataFim = 999999;
+             let matchFim = c.descricao.match(/\(Fixo até (\d{2})\/(\d{4})\)/);
+             if (matchFim) dataFim = parseInt(matchFim[2]) * 12 + (parseInt(matchFim[1]) - 1);
+             ehFuturo = (dataFim >= dataAtualView);
+         }
+
          if (!ehFuturo) return false;
          let matchTipo = (tipoSel === 'todos' || c.tipo === tipoSel);
          let matchPessoa = (pessoaSel === 'todos' || c.divisao === pessoaSel);
@@ -793,19 +842,24 @@
          if (subSel !== 'todos') { matchSub = c.descricao.includes(subSel); }
          return matchTipo && matchPessoa && matchSub;
       });
+
       let totalDívida = 0; let html = '';
       if(dividasFuturas.length === 0) { html = '<p class="text-sm text-emerald-500 font-bold mt-4 text-center">Nenhuma conta ou dívida futura encontrada para este filtro!</p>'; } else {
          dividasFuturas.sort((a,b) => (Number(a.ano) - Number(b.ano)) || (Number(a.mes) - Number(b.mes)));
          dividasFuturas.forEach(c => {
             totalDívida += Number(c.valorOriginal);
-            html += `<div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg flex justify-between items-center text-sm border border-gray-200 dark:border-gray-700"><div><p class="font-bold text-gray-800 dark:text-gray-200">${c.descricao}</p><p class="text-[10px] text-gray-500 uppercase">${meses[Number(c.mes)].substring(0,3)}/${c.ano}</p></div><p class="font-bold text-red-500">R$ ${Number(c.valorOriginal).toFixed(2).replace('.',',')}</p></div>`;
+            let nd = c.descricao.replace(/\s\(Fixo.*\)/, '');
+            let isFixa = c.descricao.includes('(Fixo)');
+            let badge = isFixa ? '<span class="ml-2 text-[10px] font-bold text-indigo-500 bg-indigo-50 px-1 rounded dark:bg-indigo-900/50 dark:text-indigo-300">FIXA MENSAL</span>' : `<span class="text-[10px] text-gray-500 uppercase block">${meses[Number(c.mes)].substring(0,3)}/${c.ano}</span>`;
+            
+            html += `<div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg flex justify-between items-center text-sm border border-gray-200 dark:border-gray-700"><div><p class="font-bold text-gray-800 dark:text-gray-200">${nd} ${badge}</p></div><p class="font-bold text-red-500">R$ ${Number(c.valorOriginal).toFixed(2).replace('.',',')}</p></div>`;
          });
          html = `<div class="bg-red-50 dark:bg-red-900/30 p-3 rounded-xl border border-red-200 dark:border-red-800 mb-4 text-center"><p class="text-sm text-red-800 dark:text-red-300 font-bold">Total previsto:</p><p class="text-2xl text-red-600 dark:text-red-400 font-black">R$ ${totalDívida.toFixed(2).replace('.',',')}</p></div>` + html;
       }
       document.getElementById('resultadoResumo').innerHTML = html;
     }
 
-    // --- FUNÇÕES DE MODAL (Saldo, Poupança, Adicionar Conta) ---
+    // --- FUNÇÕES DE MODAL ---
     function abrirModalSaldo() { document.getElementById('saldoValor').value = ''; document.getElementById('modalSaldo').classList.remove('escondido'); }
     function fecharModalSaldo() { document.getElementById('modalSaldo').classList.add('escondido'); }
     function obterDataHoraFormatada() { const d=new Date(); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} - ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
@@ -834,7 +888,7 @@
     }
 
     const inputClass = "w-full p-3.5 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-700 outline-none";
-    function abrirModal() { tempConta = { tipo: '', descricao: '', valorOriginal: 0, divisao: 'ambos', periodo: '', parcelas: 1 }; document.getElementById('modalAdd').classList.remove('escondido'); renderPasso1(); }
+    function abrirModal() { tempConta = { tipo: '', descricao: '', valorOriginal: 0, divisao: 'ambos', periodo: '', parcelas: 1, isFixa: false }; document.getElementById('modalAdd').classList.remove('escondido'); renderPasso1(); }
     function fecharModal() { document.getElementById('modalAdd').classList.add('escondido'); }
     function renderPasso1() { document.getElementById('modalConteudo').innerHTML = `<p class="font-bold text-gray-700 dark:text-gray-300 mb-3">Qual a categoria?</p><button onclick="escolherTipo('moradia')" class="w-full p-4 border dark:border-gray-700 rounded-xl text-left font-bold text-gray-700 dark:text-white mb-3">🏠 Moradia (Meio a meio)</button><button onclick="escolherTipo('cartao')" class="w-full p-4 border dark:border-gray-700 rounded-xl text-left font-bold text-gray-700 dark:text-white mb-3">💳 Cartões</button><button onclick="escolherTipo('outros')" class="w-full p-4 border dark:border-gray-700 rounded-xl text-left font-bold text-gray-700 dark:text-white">📝 Outras Contas</button>`; }
     function escolherTipo(tipo) { tempConta.tipo = tipo; if(tipo === 'moradia') tempConta.divisao = 'ambos'; renderPasso2(); }
@@ -844,7 +898,17 @@
       if(tempConta.tipo==='moradia') { html += `<p class="font-bold text-gray-700 dark:text-gray-300 mb-2">Qual despesa?</p><select id="inputDescSelect" onchange="const t=document.getElementById('inputDescText'); if(this.value==='Outra')t.classList.remove('escondido'); else t.classList.add('escondido');" class="${inputClass} mb-4"><option>Casa 1</option><option>Água</option><option>Energia</option><option>Internet</option><option value="Outra">Outra ?</option></select><input type="text" id="inputDescText" placeholder="Nome da conta..." class="escondido ${inputClass} mb-4">`; }
       else if(tempConta.tipo==='cartao') { html += `<p class="font-bold text-gray-700 dark:text-gray-300 mb-2">Qual Cartão?</p><select id="inputCartaoSelect" class="${inputClass} mb-4"><option>Itaú</option></select><p class="font-bold text-gray-700 dark:text-gray-300 mb-2">O que foi comprado?</p><input type="text" id="inputDescText" placeholder="Ex: Máquina" class="${inputClass} mb-4"><p class="font-bold text-gray-700 dark:text-gray-300 mb-2">Quem vai pagar?</p><select id="inputDivisao" class="${inputClass} mb-4"><option value="ambos">Os dois</option><option value="leo">Só Léo</option><option value="aline">Só Aline</option></select>`; }
       else { html += `<p class="font-bold text-gray-700 dark:text-gray-300 mb-2">Nome da conta:</p><input type="text" id="inputDescText" placeholder="Ex: Açougue..." class="${inputClass} mb-4"><p class="font-bold text-gray-700 dark:text-gray-300 mb-2">De quem é a conta?</p><select id="inputDivisao" class="${inputClass} mb-4"><option value="ambos">Dos dois</option><option value="leo">Só Léo</option><option value="aline">Só Aline</option></select>`; }
-      html += `<p class="font-bold text-gray-700 dark:text-gray-300 mb-1 mt-2">Meses para frente (1 = Só este mês)?</p><input type="number" id="inputParcelas" value="1" min="1" class="${inputClass} mb-4"><button onclick="irParaPasso3()" class="w-full bg-indigo-600 text-white p-4 rounded-xl font-bold">Avançar ➔</button>`;
+      
+      html += `
+        <label class="flex items-center gap-3 bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 p-4 rounded-xl border dark:border-gray-700 mb-4 cursor-pointer transition-colors shadow-sm mt-2">
+            <input type="checkbox" id="inputFixo" onchange="document.getElementById('divParcelas').style.display = this.checked ? 'none' : 'block'" class="w-6 h-6 text-indigo-600 rounded focus:ring-indigo-500">
+            <span class="font-bold text-gray-700 dark:text-gray-300">🔄 Transformar em Conta Fixa (Todo Mês)</span>
+        </label>
+        <div id="divParcelas">
+            <p class="font-bold text-gray-700 dark:text-gray-300 mb-1">Meses para frente (1 = Só este mês)?</p>
+            <input type="number" id="inputParcelas" value="1" min="1" class="${inputClass} mb-4">
+        </div>
+        <button onclick="irParaPasso3()" class="w-full bg-indigo-600 text-white p-4 rounded-xl font-bold">Avançar ➔</button>`;
       document.getElementById('modalConteudo').innerHTML = html;
     }
     
@@ -852,10 +916,16 @@
       if (tempConta.tipo === 'moradia') { const s = document.getElementById('inputDescSelect').value; tempConta.descricao = (s === 'Outra') ? document.getElementById('inputDescText').value : s; } 
       else if (tempConta.tipo === 'cartao') { tempConta.descricao = `${document.getElementById('inputCartaoSelect').value} - ${document.getElementById('inputDescText').value}`; tempConta.divisao = document.getElementById('inputDivisao').value; } 
       else { tempConta.descricao = document.getElementById('inputDescText').value; tempConta.divisao = document.getElementById('inputDivisao').value; }
-      tempConta.parcelas = parseInt(document.getElementById('inputParcelas').value) || 1;
+      
+      tempConta.isFixa = document.getElementById('inputFixo') ? document.getElementById('inputFixo').checked : false;
+      tempConta.parcelas = tempConta.isFixa ? 1 : (parseInt(document.getElementById('inputParcelas').value) || 1);
+      
       if(!tempConta.descricao) return alert("Preencha a descrição!");
+      
+      let tituloValor = tempConta.isFixa ? 'Qual o valor FIXO MENSAL (R$)?' : (tempConta.parcelas > 1 ? 'Valor de CADA parcela (R$):' : 'Qual o valor (R$)?');
       let periodoHTML = tempConta.tipo === 'cartao' ? `<select id="inputPeriodo" class="${inputClass} mb-6"><option value="pagamento" selected>Pagamento (Dia 30)</option></select>` : `<select id="inputPeriodo" class="${inputClass} mb-6"><option value="vale">Vale (Dia 15)</option><option value="pagamento">Pagamento (Dia 30)</option></select>`;
-      document.getElementById('modalConteudo').innerHTML = `<p class="font-bold text-gray-700 dark:text-gray-300 mb-2">${tempConta.parcelas > 1 ? 'Valor de CADA parcela (R$):' : 'Qual o valor (R$)?'}</p><input type="number" step="0.01" id="inputValor" class="${inputClass} text-xl font-bold mb-5"><p class="font-bold text-gray-700 dark:text-gray-300 mb-3">Vale ou Pagamento?</p>${periodoHTML}<button onclick="salvarContaFinal()" class="w-full bg-emerald-600 text-white p-4 rounded-xl font-extrabold text-lg transition-all" id="btnSalvarLote">Salvar na Nuvem ☁️</button>`;
+      
+      document.getElementById('modalConteudo').innerHTML = `<p class="font-bold text-gray-700 dark:text-gray-300 mb-2">${tituloValor}</p><input type="number" step="0.01" id="inputValor" class="${inputClass} text-xl font-bold mb-5"><p class="font-bold text-gray-700 dark:text-gray-300 mb-3">Vale ou Pagamento?</p>${periodoHTML}<button onclick="salvarContaFinal()" class="w-full bg-emerald-600 text-white p-4 rounded-xl font-extrabold text-lg transition-all" id="btnSalvarLote">Salvar na Nuvem ☁️</button>`;
     }
     
     async function salvarContaFinal() {
@@ -868,7 +938,10 @@
 
       for (let i = 0; i < parc; i++) {
         let mD = (mesAtualIndex + i) % 12; let aD = anoAtual + Math.floor((mesAtualIndex + i) / 12);
-        let descF = tempConta.descricao; if (parc > 1) descF = `${descF} (${i + 1}/${parc})`;
+        let descF = tempConta.descricao; 
+        if (parc > 1 && !tempConta.isFixa) descF = `${descF} (${i + 1}/${parc})`;
+        if (tempConta.isFixa) descF = `${descF} (Fixo)`; // Identificador Mágico
+
         let nc = { tipo: tempConta.tipo, descricao: descF, divisao: tempConta.divisao, periodo: p, mes: mD, ano: aD, valorOriginal: v, valorAline: 0, valorLeo: 0 };
         if (nc.divisao === 'ambos') { nc.valorAline = v / 2; nc.valorLeo = v / 2; } else if (nc.divisao === 'aline') nc.valorAline = v; else nc.valorLeo = v;
         geradas.push(nc);
@@ -886,9 +959,26 @@
       let t = '';
       if (p === 'poupanca') { t = 'Detalhes: POUPANÇA'; contasFiltradasNoModal = contas.filter(c => c.tipo === 'poupanca' && (Number(c.ano) < anoAtual || (Number(c.ano) === anoAtual && Number(c.mes) <= mesAtualIndex))); } 
       else if (p === 'cartoes') { t = 'Detalhes: CARTÕES'; contasFiltradasNoModal = contas.filter(c => Number(c.mes) === mesAtualIndex && Number(c.ano) === anoAtual && c.tipo === 'cartao'); } 
-      else { t = p === 'vale' ? 'Detalhes: VALE' : 'Detalhes: PAGAMENTO'; contasFiltradasNoModal = contas.filter(c => Number(c.mes) === mesAtualIndex && Number(c.ano) === anoAtual && c.periodo === p); }
+      else { t = p === 'vale' ? 'Detalhes: VALE' : 'Detalhes: PAGAMENTO'; 
+         // Filtra incluindo as fixas ativas
+         let dataAtualView = anoAtual * 12 + mesAtualIndex;
+         contasFiltradasNoModal = contas.filter(c => {
+             if (c.periodo !== p) return false;
+             let isFixa = c.descricao.includes('(Fixo)');
+             if (isFixa) {
+                 let dataCriacao = Number(c.ano) * 12 + Number(c.mes);
+                 let dataFim = 999999;
+                 let matchFim = c.descricao.match(/\(Fixo até (\d{2})\/(\d{4})\)/);
+                 if (matchFim) dataFim = parseInt(matchFim[2]) * 12 + (parseInt(matchFim[1]) - 1);
+                 return (dataAtualView >= dataCriacao && dataAtualView <= dataFim);
+             } else {
+                 return (Number(c.mes) === mesAtualIndex && Number(c.ano) === anoAtual);
+             }
+         });
+      }
       document.getElementById('detalhesTitulo').innerText = t; renderizarListaDetalhes(p); document.getElementById('modalDetalhes').classList.remove('escondido');
     }
+    
     function renderizarListaDetalhes(p) {
       let h = '';
       if (contasFiltradasNoModal.length === 0) { document.getElementById('detalhesConteudo').innerHTML = '<p class="text-center mt-5 text-gray-500">Vazio.</p>'; return; } 
@@ -900,53 +990,109 @@
             let cd = cb.filter(c => c.divisao === div.id); if (cd.length === 0) return;
             let total = cd.reduce((acc, c) => acc + Number(c.valorOriginal), 0);
             h += `<h4 class="font-bold ${cor} mt-5 mb-2">${div.t}: ${total.toFixed(2)}</h4>`;
-            cd.forEach(c => { let ix = contas.indexOf(c); h += `<div onclick="abrirAcaoItem(${ix})" class="flex justify-between items-center mb-2 p-2 -mx-2 rounded-lg cursor-pointer"><p class="text-sm dark:text-gray-200">${c.descricao.replace(`${b} - `, '')}</p><p class="text-sm font-bold dark:text-gray-200">${Number(c.valorOriginal).toFixed(2)}</p></div>`; });
+            cd.forEach(c => { 
+                let ix = contas.indexOf(c); 
+                let descLimpa = c.descricao.replace(`${b} - `, '').replace(/\s\(Fixo.*\)/, '');
+                let badge = c.descricao.includes('(Fixo)') ? '<span class="ml-2 bg-indigo-100 text-indigo-700 px-1 py-0.5 rounded text-[8px] uppercase font-bold dark:bg-indigo-900/50 dark:text-indigo-300">Fixa</span>' : '';
+                h += `<div onclick="abrirAcaoItem(${ix})" class="flex justify-between items-center mb-2 p-2 -mx-2 rounded-lg cursor-pointer"><p class="text-sm dark:text-gray-200">${descLimpa} ${badge}</p><p class="text-sm font-bold dark:text-gray-200">${Number(c.valorOriginal).toFixed(2)}</p></div>`; 
+            });
           });
         });
       } else {
         [{ id: 'ambos', t: `Ambos` }, { id: 'aline', t: `Só Aline` }, { id: 'leo', t: `Só Léo` }].forEach(div => {
           let cd = contasFiltradasNoModal.filter(c => c.divisao === div.id); if (cd.length === 0) return;
           h += `<h4 class="font-black text-gray-500 text-sm mt-5 mb-3 border-b uppercase">${div.t}</h4>`;
-          cd.forEach(c => { let ix = contas.indexOf(c); let nd = c.descricao; if(c.tipo==='poupanca') nd += ` (${meses[Number(c.mes)].substring(0,3)}/${c.ano})`; h += `<div onclick="abrirAcaoItem(${ix})" class="p-4 bg-white dark:bg-gray-800 rounded-xl mb-3 shadow-sm cursor-pointer"><div class="flex justify-between"><div><p class="font-bold dark:text-white">${nd}</p><p class="text-xs uppercase text-gray-500">${c.tipo}</p></div><div class="text-right"><p class="font-bold dark:text-white">R$ ${Number(c.valorOriginal).toFixed(2)}</p></div></div></div>`; });
+          cd.forEach(c => { 
+              let ix = contas.indexOf(c); 
+              let nd = c.descricao.replace(/\s\(\d+\/\d+\)$/, '').replace(/\s\(Fixo.*\)/, ''); 
+              if(c.tipo==='poupanca') nd += ` (${meses[Number(c.mes)].substring(0,3)}/${c.ano})`; 
+              let badge = c.descricao.includes('(Fixo)') ? '<span class="ml-2 bg-indigo-100 text-indigo-700 px-1 py-0.5 rounded text-[8px] uppercase font-bold dark:bg-indigo-900/50 dark:text-indigo-300">Fixa</span>' : '';
+              h += `<div onclick="abrirAcaoItem(${ix})" class="p-4 bg-white dark:bg-gray-800 rounded-xl mb-3 shadow-sm cursor-pointer"><div class="flex justify-between"><div><p class="font-bold dark:text-white">${nd} ${badge}</p><p class="text-xs uppercase text-gray-500">${c.tipo}</p></div><div class="text-right"><p class="font-bold dark:text-white">R$ ${Number(c.valorOriginal).toFixed(2)}</p></div></div></div>`; 
+          });
         });
       }
       document.getElementById('detalhesConteudo').innerHTML = h;
     }
     
     function fecharDetalhes() { document.getElementById('modalDetalhes').classList.add('escondido'); }
-    function abrirAcaoItem(i) { itemSelecionado = i; document.getElementById('acaoItemTitulo').innerText = contas[i].descricao; document.getElementById('modalAcaoItem').classList.remove('escondido'); }
+    function abrirAcaoItem(i) { itemSelecionado = i; document.getElementById('acaoItemTitulo').innerText = contas[i].descricao.replace(/\s\(Fixo.*\)/, ''); document.getElementById('modalAcaoItem').classList.remove('escondido'); }
     function fecharAcaoItem() { document.getElementById('modalAcaoItem').classList.add('escondido'); }
     
     async function perguntarExcluirItem() {
       if (itemSelecionado === null || !contas[itemSelecionado]) return;
-      let cR = contas[itemSelecionado]; let ehP = /\(\d+\/\d+\)$/.test(cR.descricao); if (!confirm("Excluir?")) return;
-      let mE = 'apenas_este'; if (ehP && cR.tipo !== 'poupanca') if (confirm("Excluir TODAS seguintes?")) mE = 'todas_seguintes';
+      let cR = contas[itemSelecionado]; 
+      let ehP = /\(\d+\/\d+\)$/.test(cR.descricao); 
+      let ehFixo = cR.descricao.includes('(Fixo)');
+
+      let mE = 'apenas_este'; 
+      
+      if (ehP && cR.tipo !== 'poupanca') {
+          if (!confirm("Excluir?")) return;
+          if (confirm("Excluir TODAS seguintes?")) mE = 'todas_seguintes';
+      } else if (ehFixo) {
+          let dataCriacao = Number(cR.ano) * 12 + Number(cR.mes);
+          let dataAtualView = anoAtual * 12 + mesAtualIndex;
+          if (dataCriacao === dataAtualView) {
+              if (!confirm("Excluir conta fixa criada neste mês?")) return;
+              mE = 'apagar_fixa_tudo';
+          } else {
+              if (confirm("⚠️ Esta é uma Conta Fixa.\n\n[OK] = Encerrar a partir deste mês (Mantém histórico antigo intacto)\n[Cancelar] = Apagar todo o histórico desde o início")) {
+                  mE = 'encerrar_fixa';
+              } else {
+                  if (!confirm("Tem certeza absoluta que deseja apagar essa conta fixa de TODOS OS MESES do passado também?")) return;
+                  mE = 'apagar_fixa_tudo';
+              }
+          }
+      } else {
+          if (!confirm("Excluir?")) return;
+      }
       
       const btn = document.getElementById('btnExcluirItemUI');
       if (btn) { btn.innerHTML = "Preparando..."; btn.disabled = true; }
       
-      let itensParaExcluir = [cR];
-      if (mE === 'todas_seguintes') {
-        let bN = cR.descricao.replace(/\s\(\d+\/\d+\)$/, '');
-        itensParaExcluir = contas.filter(x => { 
-            let xB = x.descricao.replace(/\s\(\d+\/\d+\)$/, ''); 
-            let fut = (Number(x.ano) > Number(cR.ano)) || (Number(x.ano) === Number(cR.ano) && Number(x.mes) >= Number(cR.mes)); 
-            return (xB === bN && fut && x.tipo === cR.tipo && x.divisao === cR.divisao); 
-        });
-        contas = contas.filter(x => !itensParaExcluir.includes(x));
-      } else {
-        contas.splice(itemSelecionado, 1);
+      if (mE === 'encerrar_fixa') {
+          let prevData = (anoAtual * 12 + mesAtualIndex) - 1;
+          let strDataFim = `(Fixo até ${String((prevData % 12) + 1).padStart(2, '0')}/${Math.floor(prevData / 12)})`;
+          let oldDesc = cR.descricao;
+          let novaDesc = oldDesc.replace(/\(Fixo.*\)/, strDataFim);
+          
+          contas[itemSelecionado].descricao = novaDesc;
+          atualizarTela();
+          if (btn) btn.innerHTML = "Encerrando...";
+          await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: oldDesc, mes: cR.mes, ano: cR.ano, modo: 'apenas_este' }) });
+          await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify(contas[itemSelecionado]) });
+      } 
+      else if (mE === 'apagar_fixa_tudo') {
+          let oldDesc = cR.descricao;
+          contas.splice(itemSelecionado, 1);
+          atualizarTela();
+          if (btn) btn.innerHTML = "Excluindo tudo...";
+          await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: oldDesc, mes: cR.mes, ano: cR.ano, modo: 'apenas_este' }) });
       }
-      atualizarTela(); 
-      
-      try { 
-         if (ehP && mE === 'todas_seguintes') {
-             await executarLoteFetch(itensParaExcluir, (item) => ({ acao: 'excluir', descricao: item.descricao, mes: item.mes, ano: item.ano, modo: 'apenas_este' }), btn, "Excluindo");
-         } else {
-             if (btn) btn.innerHTML = "Excluindo...";
-             await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: cR.descricao, mes: cR.mes, ano: cR.ano, modo: mE }) }); 
-         }
-      } catch(e){}
+      else {
+          let itensParaExcluir = [cR];
+          if (mE === 'todas_seguintes') {
+            let bN = cR.descricao.replace(/\s\(\d+\/\d+\)$/, '');
+            itensParaExcluir = contas.filter(x => { 
+                let xB = x.descricao.replace(/\s\(\d+\/\d+\)$/, ''); 
+                let fut = (Number(x.ano) > Number(cR.ano)) || (Number(x.ano) === Number(cR.ano) && Number(x.mes) >= Number(cR.mes)); 
+                return (xB === bN && fut && x.tipo === cR.tipo && x.divisao === cR.divisao); 
+            });
+            contas = contas.filter(x => !itensParaExcluir.includes(x));
+          } else {
+            contas.splice(itemSelecionado, 1);
+          }
+          atualizarTela(); 
+          
+          try { 
+             if (ehP && mE === 'todas_seguintes') {
+                 await executarLoteFetch(itensParaExcluir, (item) => ({ acao: 'excluir', descricao: item.descricao, mes: item.mes, ano: item.ano, modo: 'apenas_este' }), btn, "Excluindo");
+             } else {
+                 if (btn) btn.innerHTML = "Excluindo...";
+                 await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: cR.descricao, mes: cR.mes, ano: cR.ano, modo: mE }) }); 
+             }
+          } catch(e){}
+      }
       
       if (btn) { btn.innerHTML = "🗑️ EXCLUIR"; btn.disabled = false; }
       fecharAcaoItem(); fecharDetalhes(); 
@@ -956,10 +1102,18 @@
     function abrirAlterarItem() { 
         if (itemSelecionado === null || !contas[itemSelecionado]) return;
         fecharAcaoItem(); 
-        document.getElementById('altDesc').value = contas[itemSelecionado].descricao; 
+        document.getElementById('altDesc').value = contas[itemSelecionado].descricao.replace(/\s\(\d+\/\d+\)$/, '').replace(/\s\(Fixo.*\)/, ''); 
         document.getElementById('altValor').value = contas[itemSelecionado].valorOriginal; 
         document.getElementById('altParcelas').value = 1; 
         document.getElementById('modalAlterar').classList.remove('escondido'); 
+        
+        let ehFixo = contas[itemSelecionado].descricao.includes('(Fixo)');
+        let elParc = document.getElementById('altParcelas');
+        if(ehFixo) {
+            elParc.parentElement.style.display = 'none'; // Esconde qtde de parcelas pra conta fixa
+        } else {
+            elParc.parentElement.style.display = 'block';
+        }
     }
     
     function fecharAlterar() { document.getElementById('modalAlterar').classList.add('escondido'); }
@@ -973,9 +1127,25 @@
       btn.innerHTML = "Preparando..."; 
       btn.disabled = true;
       
-      let cA = contas[itemSelecionado]; let ehP = /\(\d+\/\d+\)$/.test(cA.descricao); let mE = 'apenas_este';
+      let cA = contas[itemSelecionado]; 
+      let ehP = /\(\d+\/\d+\)$/.test(cA.descricao); 
+      let ehFixo = cA.descricao.includes('(Fixo)');
+      let mE = 'apenas_este';
       
-      if (ehP && nP === 1) {
+      if (ehFixo) {
+          let dataCriacao = Number(cA.ano) * 12 + Number(cA.mes);
+          let dataAtualView = anoAtual * 12 + mesAtualIndex;
+          
+          if (dataCriacao === dataAtualView) {
+              mE = 'alterar_fixa_tudo'; 
+          } else {
+              if(confirm("⚠️ Esta é uma Conta Fixa.\n\n[OK] = Alterar APENAS deste mês em diante (Cria um novo histórico e mantém o passado intacto)\n[Cancelar] = Alterar no passado também")) {
+                  mE = 'alterar_fixa_frente';
+              } else {
+                  mE = 'alterar_fixa_tudo';
+              }
+          }
+      } else if (ehP && nP === 1) {
           if(confirm("Este item é parcelado.\n\nDeseja alterar TODAS as parcelas seguintes também?\n\n[OK] = Alterar esta e as futuras\n[Cancelar] = Alterar APENAS esta (Mantém o nome)")) {
               mE = 'todas_seguintes';
           }
@@ -983,40 +1153,77 @@
           mE = 'todas_seguintes';
       }
 
-      let itensParaExcluir = [cA];
-      if (mE === 'todas_seguintes') { 
-          let bN = cA.descricao.replace(/\s\(\d+\/\d+\)$/, ''); 
-          itensParaExcluir = contas.filter(x => { 
-              let xB = x.descricao.replace(/\s\(\d+\/\d+\)$/, ''); 
-              let fut = (Number(x.ano) > Number(cA.ano)) || (Number(x.ano) === Number(cA.ano) && Number(x.mes) >= Number(cA.mes)); 
-              return (xB === bN && fut && x.tipo === cA.tipo && x.divisao === cA.divisao); 
-          }); 
-          contas = contas.filter(x => !itensParaExcluir.includes(x)); 
-      } else { 
-          contas.splice(itemSelecionado, 1); 
+      if (mE === 'alterar_fixa_tudo') {
+          let oldDesc = cA.descricao;
+          let isEncerradaMatch = oldDesc.match(/\(Fixo até \d{2}\/\d{4}\)/);
+          let tag = isEncerradaMatch ? isEncerradaMatch[0] : "(Fixo)";
+          let novaDesc = nD + " " + tag;
+          
+          let nC = { ...cA, descricao: novaDesc, valorOriginal: nV };
+          if (nC.divisao === 'ambos') { nC.valorAline = nV / 2; nC.valorLeo = nV / 2; } else if (nC.divisao === 'aline') nC.valorAline = nV; else nC.valorLeo = nV;
+          
+          contas.splice(itemSelecionado, 1); contas.push(nC); atualizarTela();
+          
+          btn.innerHTML = "Atualizando...";
+          await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: oldDesc, mes: cA.mes, ano: cA.ano, modo: 'apenas_este' }) });
+          await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify(nC) });
+
+      } else if (mE === 'alterar_fixa_frente') {
+          let oldDesc = cA.descricao;
+          let prevData = (anoAtual * 12 + mesAtualIndex) - 1;
+          let strDataFim = `(Fixo até ${String((prevData % 12) + 1).padStart(2, '0')}/${Math.floor(prevData / 12)})`;
+          let descEncerrada = oldDesc.replace(/\(Fixo.*\)/, strDataFim);
+          
+          contas[itemSelecionado].descricao = descEncerrada;
+          
+          let novaDesc = nD + " (Fixo)";
+          let nC = { tipo: cA.tipo, descricao: novaDesc, divisao: cA.divisao, periodo: cA.periodo, mes: mesAtualIndex, ano: anoAtual, valorOriginal: nV, valorAline: 0, valorLeo: 0 };
+          if (nC.divisao === 'ambos') { nC.valorAline = nV / 2; nC.valorLeo = nV / 2; } else if (nC.divisao === 'aline') nC.valorAline = nV; else nC.valorLeo = nV;
+          
+          contas.push(nC); atualizarTela();
+          
+          btn.innerHTML = "Criando histórico...";
+          await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: oldDesc, mes: cA.mes, ano: cA.ano, modo: 'apenas_este' }) });
+          await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify(contas[itemSelecionado]) });
+          await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify(nC) });
+          
+      } else {
+          // Lógica Normal de Parcelas
+          let itensParaExcluir = [cA];
+          if (mE === 'todas_seguintes') { 
+              let bN = cA.descricao.replace(/\s\(\d+\/\d+\)$/, ''); 
+              itensParaExcluir = contas.filter(x => { 
+                  let xB = x.descricao.replace(/\s\(\d+\/\d+\)$/, ''); 
+                  let fut = (Number(x.ano) > Number(cA.ano)) || (Number(x.ano) === Number(cA.ano) && Number(x.mes) >= Number(cA.mes)); 
+                  return (xB === bN && fut && x.tipo === cA.tipo && x.divisao === cA.divisao); 
+              }); 
+              contas = contas.filter(x => !itensParaExcluir.includes(x)); 
+          } else { 
+              contas.splice(itemSelecionado, 1); 
+          }
+          
+          let geradas = []; 
+          let bNew = nD;
+          if (mE === 'todas_seguintes') bNew = nD.replace(/\s\(\d+\/\d+\)$/, ''); 
+          
+          for (let i = 0; i < (cA.tipo === 'poupanca' ? 1 : nP); i++) {
+            let mD = (mesAtualIndex + i) % 12; let aD = anoAtual + Math.floor((mesAtualIndex + i) / 12); 
+            let dF = bNew; if (nP > 1 && cA.tipo !== 'poupanca') dF = `${bNew} (${i + 1}/${nP})`; 
+            let nC = { tipo: cA.tipo, descricao: dF, divisao: cA.divisao, periodo: cA.periodo, mes: mD, ano: aD, valorOriginal: nV, valorAline: 0, valorLeo: 0 };
+            if (nC.divisao === 'ambos') { nC.valorAline = nV / 2; nC.valorLeo = nV / 2; } else if (nC.divisao === 'aline') nC.valorAline = nV; else nC.valorLeo = nV; geradas.push(nC);
+          }
+          contas.push(...geradas); atualizarTela();
+          
+          try { 
+             if (ehP && mE === 'todas_seguintes') {
+                 await executarLoteFetch(itensParaExcluir, (item) => ({ acao: 'excluir', descricao: item.descricao, mes: item.mes, ano: item.ano, modo: 'apenas_este' }), btn, "Limpando");
+             } else {
+                 btn.innerHTML = "Limpando antiga...";
+                 await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: cA.descricao, mes: cA.mes, ano: cA.ano, modo: mE }) }); 
+             }
+             await executarLoteFetch(geradas, (c) => c, btn, "Salvando");
+          } catch(e){}
       }
-      
-      let geradas = []; 
-      let bNew = nD;
-      if (mE === 'todas_seguintes') bNew = nD.replace(/\s\(\d+\/\d+\)$/, ''); 
-      
-      for (let i = 0; i < (cA.tipo === 'poupanca' ? 1 : nP); i++) {
-        let mD = (mesAtualIndex + i) % 12; let aD = anoAtual + Math.floor((mesAtualIndex + i) / 12); 
-        let dF = bNew; if (nP > 1 && cA.tipo !== 'poupanca') dF = `${bNew} (${i + 1}/${nP})`; 
-        let nC = { tipo: cA.tipo, descricao: dF, divisao: cA.divisao, periodo: cA.periodo, mes: mD, ano: aD, valorOriginal: nV, valorAline: 0, valorLeo: 0 };
-        if (nC.divisao === 'ambos') { nC.valorAline = nV / 2; nC.valorLeo = nV / 2; } else if (nC.divisao === 'aline') nC.valorAline = nV; else nC.valorLeo = nV; geradas.push(nC);
-      }
-      contas.push(...geradas); atualizarTela();
-      
-      try { 
-         if (ehP && mE === 'todas_seguintes') {
-             await executarLoteFetch(itensParaExcluir, (item) => ({ acao: 'excluir', descricao: item.descricao, mes: item.mes, ano: item.ano, modo: 'apenas_este' }), btn, "Limpando");
-         } else {
-             btn.innerHTML = "Limpando antiga...";
-             await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: cA.descricao, mes: cA.mes, ano: cA.ano, modo: mE }) }); 
-         }
-         await executarLoteFetch(geradas, (c) => c, btn, "Salvando");
-      } catch(e){}
       
       fecharAlterar(); fecharDetalhes(); 
       btn.innerHTML = "Salvar Alteração"; 
