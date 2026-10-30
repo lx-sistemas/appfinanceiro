@@ -310,7 +310,7 @@
           <input type="number" step="0.01" id="rendaExtraValor" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white text-xl font-bold outline-none">
           <p class="font-bold text-gray-700 dark:text-gray-300">Gerar por quantos meses (1 = Só este mês)?</p>
           <input type="number" id="rendaExtraParcelas" value="1" min="1" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white outline-none">
-          <button onclick="salvarRendaExtra()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-4 rounded-xl font-extrabold text-lg shadow-md" id="btnSalvarRendaExtra">Salvar Entrada ☁️</button>
+          <button onclick="salvarRendaExtra()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-4 rounded-xl font-extrabold text-lg shadow-md transition-all" id="btnSalvarRendaExtra">Salvar Entrada ☁️</button>
         </div>
       </div>
     </div>
@@ -335,11 +335,11 @@
     </div>
     
     <div id="modalAcaoItem" class="escondido absolute inset-0 bg-gray-900/80 backdrop-blur-sm flex justify-center items-center z-50 p-5">
-      <div class="bg-white dark:bg-gray-900 w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center"><h3 id="acaoItemTitulo" class="font-black text-lg text-gray-800 dark:text-white mb-2">Gerenciar</h3><p class="text-sm text-gray-500 mb-6">O que deseja fazer?</p><div class="space-y-3"><button onclick="abrirAlterarItem()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-3.5 rounded-xl shadow-md">✏️ ALTERAR</button><button onclick="perguntarExcluirItem()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold p-3.5 rounded-xl shadow-md">🗑️ EXCLUIR</button><button onclick="fecharAcaoItem()" class="w-full bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold p-3 rounded-xl">Cancelar</button></div></div>
+      <div class="bg-white dark:bg-gray-900 w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center"><h3 id="acaoItemTitulo" class="font-black text-lg text-gray-800 dark:text-white mb-2">Gerenciar</h3><p class="text-sm text-gray-500 mb-6">O que deseja fazer?</p><div class="space-y-3"><button onclick="abrirAlterarItem()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-3.5 rounded-xl shadow-md">✏️ ALTERAR</button><button id="btnExcluirItemUI" onclick="perguntarExcluirItem()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold p-3.5 rounded-xl shadow-md transition-all">🗑️ EXCLUIR</button><button onclick="fecharAcaoItem()" class="w-full bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold p-3 rounded-xl">Cancelar</button></div></div>
     </div>
     
     <div id="modalAlterar" class="escondido absolute inset-0 bg-gray-900/70 backdrop-blur-sm flex justify-center items-end z-50">
-      <div class="bg-white dark:bg-gray-900 w-full rounded-t-3xl p-6 shadow-2xl"><div class="flex justify-between items-center mb-4"><h3 class="font-black text-xl text-gray-800 dark:text-white">Alterar</h3><button onclick="fecharAlterar()" class="text-gray-400 text-2xl font-bold">&times;</button></div><div class="space-y-4"><p class="font-bold text-gray-700 dark:text-gray-300">Descrição:</p><input type="text" id="altDesc" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white"><p class="font-bold text-gray-700 dark:text-gray-300">Novo Valor (R$):</p><input type="number" step="0.01" id="altValor" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white"><p class="font-bold text-gray-700 dark:text-gray-300">Gerar quantas parcelas pra frente?</p><input type="number" id="altParcelas" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white"><button onclick="salvarAlteracao()" class="w-full bg-emerald-600 text-white p-4 rounded-xl font-bold" id="btnSalvarAlt">Salvar Alteração</button></div></div>
+      <div class="bg-white dark:bg-gray-900 w-full rounded-t-3xl p-6 shadow-2xl"><div class="flex justify-between items-center mb-4"><h3 class="font-black text-xl text-gray-800 dark:text-white">Alterar</h3><button onclick="fecharAlterar()" class="text-gray-400 text-2xl font-bold">&times;</button></div><div class="space-y-4"><p class="font-bold text-gray-700 dark:text-gray-300">Descrição:</p><input type="text" id="altDesc" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white"><p class="font-bold text-gray-700 dark:text-gray-300">Novo Valor (R$):</p><input type="number" step="0.01" id="altValor" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white"><p class="font-bold text-gray-700 dark:text-gray-300">Gerar quantas parcelas pra frente?</p><input type="number" id="altParcelas" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white"><button onclick="salvarAlteracao()" class="w-full bg-emerald-600 text-white p-4 rounded-xl font-bold transition-all" id="btnSalvarAlt">Salvar Alteração</button></div></div>
     </div>
 
   </div>
@@ -673,11 +673,26 @@
         return fetch(url, options);
     }
 
-    async function executarLoteFetch(itens, mapeador) {
+    // NOVA FUNÇÃO DE LOTE: GERA A BARRA DE PROGRESSO VISUAL NO BOTÃO
+    async function executarLoteFetch(itens, mapeador, btnElement = null, prefixo = "Salvando") {
+        if (btnElement && !btnElement.classList.contains('relative')) {
+            btnElement.classList.add('relative', 'overflow-hidden');
+        }
+
         for (let i = 0; i < itens.length; i++) {
             let payload = JSON.stringify(mapeador(itens[i]));
             await fetchComRetry(URL_PLANILHA, { method: "POST", body: payload });
-            await new Promise(r => setTimeout(r, 150)); // Micro-pausa de segurança para não travar o Google
+            
+            if (btnElement) {
+                let progresso = Math.round(((i + 1) / itens.length) * 100);
+                // Preenche o fundo do botão como uma barra de progresso (width: X%)
+                btnElement.innerHTML = `
+                    <div class="absolute left-0 top-0 bottom-0 bg-black/20 dark:bg-white/20 transition-all duration-200" style="width: ${progresso}%"></div>
+                    <span class="relative z-10">${prefixo} ${progresso}% <span class="text-xs opacity-80">(${i + 1}/${itens.length})</span></span>
+                `;
+            }
+            
+            await new Promise(r => setTimeout(r, 150)); // Micro-pausa
         }
     }
 
@@ -730,7 +745,10 @@
         let divisao = document.getElementById('rendaExtraPessoa').value; let desc = document.getElementById('rendaExtraDesc').value; let valor = parseFloat(document.getElementById('rendaExtraValor').value.replace(',', '.')); let parc = parseInt(document.getElementById('rendaExtraParcelas').value) || 1;
         if(!desc || isNaN(valor)) return alert("Preencha a descrição e o valor!");
         
-        const btn = document.getElementById('btnSalvarRendaExtra'); btn.innerText = "Salvando (Aguarde)..."; btn.disabled = true;
+        const btn = document.getElementById('btnSalvarRendaExtra'); 
+        btn.innerHTML = "Preparando..."; 
+        btn.disabled = true;
+        
         let geradas = [];
         for (let i = 0; i < parc; i++) {
             let mD = (mesAtualIndex + i) % 12; let aD = anoAtual + Math.floor((mesAtualIndex + i) / 12);
@@ -741,8 +759,10 @@
         }
         contas.push(...geradas); atualizarTela(); 
         
-        try { await executarLoteFetch(geradas, (c) => c); } catch(e){} 
-        fecharModalRendaExtra(); btn.innerText = "Salvar Entrada ☁️"; btn.disabled = false;
+        try { await executarLoteFetch(geradas, (c) => c, btn, "Salvando"); } catch(e){} 
+        fecharModalRendaExtra(); 
+        btn.innerHTML = "Salvar Entrada ☁️"; 
+        btn.disabled = false;
     }
 
     function preencherSubItensResumo() {
@@ -835,13 +855,16 @@
       tempConta.parcelas = parseInt(document.getElementById('inputParcelas').value) || 1;
       if(!tempConta.descricao) return alert("Preencha a descrição!");
       let periodoHTML = tempConta.tipo === 'cartao' ? `<select id="inputPeriodo" class="${inputClass} mb-6"><option value="pagamento" selected>Pagamento (Dia 30)</option></select>` : `<select id="inputPeriodo" class="${inputClass} mb-6"><option value="vale">Vale (Dia 15)</option><option value="pagamento">Pagamento (Dia 30)</option></select>`;
-      document.getElementById('modalConteudo').innerHTML = `<p class="font-bold text-gray-700 dark:text-gray-300 mb-2">${tempConta.parcelas > 1 ? 'Valor de CADA parcela (R$):' : 'Qual o valor (R$)?'}</p><input type="number" step="0.01" id="inputValor" class="${inputClass} text-xl font-bold mb-5"><p class="font-bold text-gray-700 dark:text-gray-300 mb-3">Vale ou Pagamento?</p>${periodoHTML}<button onclick="salvarContaFinal()" class="w-full bg-emerald-600 text-white p-4 rounded-xl font-extrabold text-lg" id="btnSalvarLote">Salvar na Nuvem ☁️</button>`;
+      document.getElementById('modalConteudo').innerHTML = `<p class="font-bold text-gray-700 dark:text-gray-300 mb-2">${tempConta.parcelas > 1 ? 'Valor de CADA parcela (R$):' : 'Qual o valor (R$)?'}</p><input type="number" step="0.01" id="inputValor" class="${inputClass} text-xl font-bold mb-5"><p class="font-bold text-gray-700 dark:text-gray-300 mb-3">Vale ou Pagamento?</p>${periodoHTML}<button onclick="salvarContaFinal()" class="w-full bg-emerald-600 text-white p-4 rounded-xl font-extrabold text-lg transition-all" id="btnSalvarLote">Salvar na Nuvem ☁️</button>`;
     }
     
     async function salvarContaFinal() {
       const v = parseFloat(document.getElementById('inputValor').value.replace(',', '.')); if(isNaN(v)) return alert("Digite o valor!");
       const p = document.getElementById('inputPeriodo').value; let parc = tempConta.parcelas || 1; let geradas = [];
-      const btn = document.getElementById('btnSalvarLote'); btn.innerText = "Salvando (Aguarde)..."; btn.disabled = true;
+      
+      const btn = document.getElementById('btnSalvarLote'); 
+      btn.innerHTML = "Preparando..."; 
+      btn.disabled = true;
 
       for (let i = 0; i < parc; i++) {
         let mD = (mesAtualIndex + i) % 12; let aD = anoAtual + Math.floor((mesAtualIndex + i) / 12);
@@ -851,8 +874,12 @@
         geradas.push(nc);
       }
       contas.push(...geradas); atualizarTela(); 
-      try { await executarLoteFetch(geradas, (c) => c); } catch(e){} 
-      fecharModal(); btn.innerText = "Salvar na Nuvem"; btn.disabled = false;
+      
+      try { await executarLoteFetch(geradas, (c) => c, btn, "Salvando"); } catch(e){} 
+      
+      fecharModal(); 
+      btn.innerHTML = "Salvar na Nuvem ☁️"; 
+      btn.disabled = false;
     }
 
     function verDetalhes(p) {
@@ -895,9 +922,10 @@
       let cR = contas[itemSelecionado]; let ehP = /\(\d+\/\d+\)$/.test(cR.descricao); if (!confirm("Excluir?")) return;
       let mE = 'apenas_este'; if (ehP && cR.tipo !== 'poupanca') if (confirm("Excluir TODAS seguintes?")) mE = 'todas_seguintes';
       
-      fecharAcaoItem(); fecharDetalhes(); 
+      const btn = document.getElementById('btnExcluirItemUI');
+      if (btn) { btn.innerHTML = "Preparando..."; btn.disabled = true; }
+      
       let itensParaExcluir = [cR];
-
       if (mE === 'todas_seguintes') {
         let bN = cR.descricao.replace(/\s\(\d+\/\d+\)$/, '');
         itensParaExcluir = contas.filter(x => { 
@@ -913,12 +941,15 @@
       
       try { 
          if (ehP && mE === 'todas_seguintes') {
-             await executarLoteFetch(itensParaExcluir, (item) => ({ acao: 'excluir', descricao: item.descricao, mes: item.mes, ano: item.ano, modo: 'apenas_este' }));
+             await executarLoteFetch(itensParaExcluir, (item) => ({ acao: 'excluir', descricao: item.descricao, mes: item.mes, ano: item.ano, modo: 'apenas_este' }), btn, "Excluindo");
          } else {
+             if (btn) btn.innerHTML = "Excluindo...";
              await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: cR.descricao, mes: cR.mes, ano: cR.ano, modo: mE }) }); 
          }
       } catch(e){}
       
+      if (btn) { btn.innerHTML = "🗑️ EXCLUIR"; btn.disabled = false; }
+      fecharAcaoItem(); fecharDetalhes(); 
       itemSelecionado = null;
     }
 
@@ -938,7 +969,10 @@
       let nD = document.getElementById('altDesc').value; let nV = parseFloat(document.getElementById('altValor').value.replace(',', '.')); let nP = parseInt(document.getElementById('altParcelas').value) || 1;
       if(!nD || isNaN(nV)) return alert("Preencha!"); 
       
-      const btn = document.getElementById('btnSalvarAlt'); btn.innerText = "Salvando (Aguarde)..."; btn.disabled = true;
+      const btn = document.getElementById('btnSalvarAlt'); 
+      btn.innerHTML = "Preparando..."; 
+      btn.disabled = true;
+      
       let cA = contas[itemSelecionado]; let ehP = /\(\d+\/\d+\)$/.test(cA.descricao); let mE = 'apenas_este';
       
       if (ehP && nP === 1) {
@@ -962,7 +996,6 @@
           contas.splice(itemSelecionado, 1); 
       }
       
-      fecharAlterar(); fecharDetalhes(); 
       let geradas = []; 
       let bNew = nD;
       if (mE === 'todas_seguintes') bNew = nD.replace(/\s\(\d+\/\d+\)$/, ''); 
@@ -977,14 +1010,17 @@
       
       try { 
          if (ehP && mE === 'todas_seguintes') {
-             await executarLoteFetch(itensParaExcluir, (item) => ({ acao: 'excluir', descricao: item.descricao, mes: item.mes, ano: item.ano, modo: 'apenas_este' }));
+             await executarLoteFetch(itensParaExcluir, (item) => ({ acao: 'excluir', descricao: item.descricao, mes: item.mes, ano: item.ano, modo: 'apenas_este' }), btn, "Limpando");
          } else {
+             btn.innerHTML = "Limpando antiga...";
              await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: cA.descricao, mes: cA.mes, ano: cA.ano, modo: mE }) }); 
          }
-         await executarLoteFetch(geradas, (c) => c);
+         await executarLoteFetch(geradas, (c) => c, btn, "Salvando");
       } catch(e){}
       
-      btn.innerText = "Salvar Alteração"; btn.disabled = false;
+      fecharAlterar(); fecharDetalhes(); 
+      btn.innerHTML = "Salvar Alteração"; 
+      btn.disabled = false;
       itemSelecionado = null;
     }
   </script>
