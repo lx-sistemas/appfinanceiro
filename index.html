@@ -1,1209 +1,433 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="light">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Controle Financeiro</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: { extend: {} }
-    }
-  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manutenção Predial - Solicitações</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    .escondido { display: none !important; }
-    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
-    .dark .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #334155; }
-    * { -webkit-tap-highlight-color: transparent; }
-    body { overscroll-behavior-y: none; }
-  </style>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,1,0" />
 </head>
-<body class="bg-gray-200 dark:bg-black flex justify-center h-[100dvh] w-full overflow-hidden transition-colors duration-300 antialiased">
+<body>
 
-  <div class="w-full max-w-md bg-slate-50 dark:bg-black h-full flex flex-col relative shadow-2xl overflow-hidden">
-    
-    <div class="flex-shrink-0 z-20 bg-slate-50 dark:bg-black shadow-sm overflow-hidden">
-      <div id="topBar" class="bg-gradient-to-r from-blue-600 to-indigo-700 p-5 rounded-b-3xl shadow-lg relative z-10 transition-all duration-300 ease-in-out">
-        <div class="flex justify-between items-center">
-          <button onclick="refreshApp(this)" class="p-2.5 bg-white/20 text-white rounded-full hover:bg-white/30 transition-all shadow-sm backdrop-blur-sm flex items-center justify-center">
-            <svg class="w-5 h-5 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+  <!-- DASHBOARD PRINCIPAL -->
+  <main id="app-screen" class="screen active">
+    <header class="app-header">
+      <div class="header-brand">
+        <img src="LOGO.png" alt="Logo Manutenção Predial" class="header-logo">
+        <div class="header-titles">
+          <h1>Manutenção Predial</h1>
+          <p id="user-info">Portal de Solicitações e Acompanhamento</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="btn-outline animate-pop" id="btn-login-modal" onclick="abrirModalLogin()">Fazer Login</button>
+        <div id="user-profile" style="display:none; align-items:center; gap:6px;">
+          <span id="user-info-nome" class="user-badge-nome"></span>
+          <button type="button" class="btn-icon animate-pop" onclick="fazerLogout()" title="Sair"><span class="material-symbols-outlined">logout</span></button>
+        </div>
+        <button type="button" class="btn-icon add-btn animate-pop" id="btn-nova-os" onclick="abrirModalNovaOS()" title="Nova Ordem de Serviço">
+          <span class="material-symbols-outlined">add</span> <span class="add-btn-text">NOVA OS</span>
+        </button>
+      </div>
+    </header>
+
+    <div id="top-cards-wrap">
+      <div class="collapsible-inner">
+        <div class="dashboard-cards-container">
+          <section class="dashboard-cards">
+            <div class="dash-card status-aberto animate-hover" onclick="alternarFiltro('EM ABERTO', this)">
+              <div class="dash-icon"><span class="material-symbols-outlined">assignment</span></div>
+              <div class="dash-info"><h3>Em Aberto</h3><h2 id="count-aberto">0</h2></div>
+            </div>
+            <div class="dash-card status-pecas animate-hover" onclick="alternarFiltro('AGUARDANDO', this)">
+              <div class="dash-icon"><span class="material-symbols-outlined">inventory_2</span></div>
+              <div class="dash-info"><h3>Aguard. Material</h3><h2 id="count-pecas">0</h2></div>
+            </div>
+            <div class="dash-card status-andamento animate-hover" onclick="alternarFiltro('EM ANDAMENTO', this)">
+              <div class="dash-icon"><span class="material-symbols-outlined">pending_actions</span></div>
+              <div class="dash-info"><h3>Em Andamento</h3><h2 id="count-andamento">0</h2></div>
+            </div>
+            <div class="dash-card status-concluido animate-hover" onclick="alternarFiltro('CONCLUÍDO', this)">
+              <div class="dash-icon"><span class="material-symbols-outlined">check_circle</span></div>
+              <div class="dash-info"><h3>Concluídas</h3><h2 id="count-concluido">0</h2></div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <!-- BUSCA E FILTROS -->
+    <div class="sticky-filters-container">
+      <div class="app-content-inner">
+        <div class="filters-bar">
+          <div class="search-box">
+            <span class="material-symbols-outlined">search</span>
+            <input type="text" id="search-os" placeholder="Busca inteligente (matrícula, solicitante, setor, ID, descrição)...">
+          </div>
+          <div class="filter-chips-grid" id="botoes-ordenacao">
+            <button type="button" class="chip active-all animate-pop" id="btn-todas" onclick="limparFiltros()">Todas</button>
+            <button type="button" class="chip active animate-pop" data-ordem="DATA">Data <span class="material-symbols-outlined sort-icon" style="font-size:16px;">arrow_downward</span></button>
+            <button type="button" class="chip animate-pop" data-ordem="PRIORIDADE">Prioridade <span class="material-symbols-outlined sort-icon" style="opacity:0; font-size:16px;">arrow_downward</span></button>
+            <button type="button" class="chip animate-pop" data-ordem="PROGRESSO">Progresso <span class="material-symbols-outlined sort-icon" style="opacity:0; font-size:16px;">arrow_downward</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="app-content">
+      <section class="os-list" id="os-container"></section>
+    </div>
+  </main>
+
+  <!-- MODAL DE LOGIN (ADMIN) -->
+  <div id="modal-login" class="modal-overlay modal-login-overlay" onclick="fecharAoClicarFora(event, 'modal-login')">
+    <div class="modal-content modal-login-content animate-modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 style="display:flex; align-items:center; gap:8px;"><span class="material-symbols-outlined" style="color:var(--primary);">admin_panel_settings</span> Acesso Restrito</h3>
+        <button type="button" class="btn-icon" onclick="fecharModal('modal-login')" title="Fechar"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div class="modal-body">
+        <form id="login-form">
+          <div class="input-group">
+            <label for="username">Usuário Administrativo</label>
+            <input type="text" id="username" placeholder="Seu usuário" required autocomplete="off" autocapitalize="none">
+          </div>
+          <div class="input-group">
+            <label for="password">Senha</label>
+            <input type="password" id="password" placeholder="Sua senha" required>
+          </div>
+          <button type="submit" class="btn-primary animate-pop" id="btn-login" style="margin-top:8px;">
+            <span class="material-symbols-outlined">login</span> Entrar
           </button>
-          <h1 class="text-white text-xl font-extrabold tracking-wide drop-shadow-md">Controle Financeiro</h1>
-          <button onclick="toggleDarkMode()" class="p-2.5 bg-white/20 text-white rounded-full hover:bg-white/30 transition-all shadow-sm backdrop-blur-sm flex items-center justify-center">
-            <span id="iconeTema">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
-            </span>
-          </button>
-        </div>
-      </div>
-      <div class="flex justify-between items-center p-4 bg-slate-50 dark:bg-black relative z-20">
-        <button onclick="mudarMes(-1)" class="text-4xl text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors px-4 pb-1">&lt;</button>
-        <div class="text-center">
-          <h2 id="mesAtual" class="text-2xl font-black text-gray-800 dark:text-white uppercase">MÊS</h2>
-          <p id="anoAtual" class="text-gray-500 dark:text-gray-400 font-medium -mt-1">ANO</p>
-        </div>
-        <button onclick="mudarMes(1)" class="text-4xl text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors px-4 pb-1">&gt;</button>
+          <div id="login-msg" style="display:none; color:var(--status-urgente); font-size:0.9rem; font-weight:bold; margin-top:12px; text-align:center;"></div>
+        </form>
       </div>
     </div>
-
-    <div id="swipe-area" class="flex-1 overflow-y-auto px-5 pb-28 pt-2 space-y-5 custom-scrollbar relative z-10 transition-all duration-300">
-      
-      <div id="tab-home" class="space-y-5">
-        
-        <div class="bg-white dark:bg-gray-900 p-5 rounded-2xl shadow-md border-l-4 border-indigo-500">
-          <h3 class="font-extrabold text-black dark:text-white text-lg mb-4 text-center border-b border-gray-100 dark:border-gray-800 pb-2">📊 Balanço do Mês</h3>
-          
-          <div class="flex flex-col gap-6">
-            <div class="flex items-center justify-between">
-              <div class="w-[45%] flex flex-col items-center justify-center">
-                <div class="relative w-24 h-24">
-                  <canvas id="chartAline"></canvas>
-                </div>
-                <span class="text-red-500 font-black mt-2 tracking-wider text-sm">🔴 ALINE</span>
-              </div>
-              <div class="w-[55%] pl-2 space-y-1.5">
-                <div class="flex justify-between items-center gap-1"><span class="text-[10px] text-gray-500 font-bold uppercase">Entrada</span> <span class="text-gray-800 dark:text-white font-black text-xs whitespace-nowrap">R$ <span id="homeEntradasAline">0,00</span></span></div>
-                <div class="flex justify-between items-center gap-1"><span class="text-[10px] text-red-500 font-bold uppercase">Gasto</span> <span class="text-red-500 font-black text-xs whitespace-nowrap">R$ <span id="homeGastosAline">0,00</span></span></div>
-                <hr class="border-gray-100 dark:border-gray-800 my-1">
-                <div class="flex justify-between items-center gap-1"><span id="homeLabelSaldoAline" class="text-[10px] text-emerald-500 font-bold uppercase">Livre</span> <span id="homeSaldoAlineContainer" class="text-emerald-500 font-black text-xs whitespace-nowrap">R$ <span id="homeSaldoAline">0,00</span></span></div>
-              </div>
-            </div>
-
-            <div class="flex items-center justify-between border-t border-gray-100 dark:border-gray-800 pt-4">
-              <div class="w-[45%] flex flex-col items-center justify-center">
-                <div class="relative w-24 h-24">
-                  <canvas id="chartLeo"></canvas>
-                </div>
-                <span class="text-blue-500 font-black mt-2 tracking-wider text-sm">🔵 LÉO</span>
-              </div>
-              <div class="w-[55%] pl-2 space-y-1.5">
-                <div class="flex justify-between items-center gap-1"><span class="text-[10px] text-gray-500 font-bold uppercase">Entrada</span> <span class="text-gray-800 dark:text-white font-black text-xs whitespace-nowrap">R$ <span id="homeEntradasLeo">0,00</span></span></div>
-                <div class="flex justify-between items-center gap-1"><span class="text-[10px] text-red-500 font-bold uppercase">Gasto</span> <span class="text-red-500 font-black text-xs whitespace-nowrap">R$ <span id="homeGastosLeo">0,00</span></span></div>
-                <hr class="border-gray-100 dark:border-gray-800 my-1">
-                <div class="flex justify-between items-center gap-1"><span id="homeLabelSaldoLeo" class="text-[10px] text-emerald-500 font-bold uppercase">Livre</span> <span id="homeSaldoLeoContainer" class="text-emerald-500 font-black text-xs whitespace-nowrap">R$ <span id="homeSaldoLeo">0,00</span></span></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="bg-white dark:bg-gray-900 border-l-4 border-purple-500 p-5 rounded-2xl shadow-md">
-          <h3 class="font-extrabold text-black dark:text-white text-lg mb-4 border-b border-gray-100 dark:border-gray-800 pb-2">💰 SALDO ATUAL</h3>
-          <div class="space-y-3 mb-5">
-            <div class="flex justify-between items-center bg-gray-50 dark:bg-gray-800 p-3 rounded-xl border border-gray-100 dark:border-gray-700"><span class="font-bold text-gray-700 dark:text-gray-300">🥖 Pão:</span><span class="font-black text-gray-900 dark:text-white text-lg">R$ <span id="saldoPao">0,00</span></span></div>
-            <div class="flex justify-between items-center bg-gray-50 dark:bg-gray-800 p-3 rounded-xl border border-gray-100 dark:border-gray-700"><span class="font-bold text-gray-700 dark:text-gray-300">🐕 Ração:</span><span class="font-black text-gray-900 dark:text-white text-lg">R$ <span id="saldoRacao">0,00</span></span></div>
-            <div class="flex justify-between items-center bg-gray-50 dark:bg-gray-800 p-3 rounded-xl border border-gray-100 dark:border-gray-700"><span class="font-bold text-gray-700 dark:text-gray-300">⛽ Gasolina:</span><span class="font-black text-gray-900 dark:text-white text-lg">R$ <span id="saldoGasolina">0,00</span></span></div>
-          </div>
-          <button onclick="abrirModalSaldo()" class="w-full bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-bold py-3 rounded-xl shadow-sm border border-purple-200 dark:border-purple-800">✏️ Atualizar Saldo</button>
-          <p class="text-center text-xs text-gray-400 mt-4 italic" id="dataUltimoSaldo">Atualizado em --/--/---- - --:--</p>
-        </div>
-
-        <div class="bg-white dark:bg-gray-900 border-l-4 border-yellow-500 p-5 rounded-2xl shadow-md">
-          <h3 class="font-extrabold text-black dark:text-white text-lg mb-4 border-b border-gray-100 dark:border-gray-800 pb-2">🏦 NOSSA POUPANÇA</h3>
-          <div class="flex justify-between mb-5">
-             <div><p class="text-red-500 font-bold text-sm tracking-wider mb-1">🔴 ALINE</p><p class="font-black text-gray-800 dark:text-white text-lg">R$ <span id="poupAline">0,00</span></p></div>
-             <div class="text-right"><p class="text-blue-500 font-bold text-sm tracking-wider mb-1">🔵 LÉO</p><p class="font-black text-gray-800 dark:text-white text-lg">R$ <span id="poupLeo">0,00</span></p></div>
-          </div>
-          <div class="mb-5 bg-gray-50 dark:bg-gray-800 p-3 rounded-xl border border-gray-100 dark:border-gray-700">
-             <div class="flex justify-between text-xs font-black text-gray-600 dark:text-gray-300 mb-2 uppercase">
-               <span id="poupTextoMeta">1ª META: R$ 5.000</span><span id="poupTotal">R$ 0,00</span>
-             </div>
-             <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                <div id="poupBarra" class="bg-gradient-to-r from-yellow-400 to-yellow-500 h-3 rounded-full transition-all duration-1000" style="width: 0%"></div>
-             </div>
-          </div>
-          <div class="flex gap-3">
-            <button onclick="abrirModalPoupanca()" class="flex-1 bg-green-50 hover:bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-bold py-2.5 rounded-xl border border-green-200 dark:border-green-800 shadow-sm text-sm">+ Add Depósito</button>
-            <button onclick="verDetalhes('poupanca')" class="flex-1 bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 font-bold py-2.5 rounded-xl border border-yellow-200 dark:border-yellow-800 shadow-sm text-sm">+ Detalhes</button>
-          </div>
-        </div>
-
-      </div>
-
-      <div id="tab-meses" class="space-y-5 escondido">
-        <div class="bg-white dark:bg-gray-900 border-l-4 border-blue-500 p-5 rounded-2xl shadow-md">
-          <h3 class="font-extrabold text-black dark:text-white text-lg mb-4 border-b border-gray-100 dark:border-gray-800 pb-2">📅 VALE ➔ Dia 15</h3>
-          <div class="space-y-4">
-            <div><p class="text-red-500 font-bold text-sm tracking-wider mb-1">🔴 ALINE</p><ul id="listaValeAline" class="text-sm text-gray-600 dark:text-gray-400 ml-5 list-disc"></ul><p class="text-red-500 font-bold text-sm mt-2 ml-5 bg-red-50 dark:bg-red-900/20 inline-block px-2.5 py-1 rounded-md">TOTAL = R$ <span id="valeAline">0,00</span></p></div>
-            <div><p class="text-blue-500 font-bold text-sm tracking-wider mb-1">🔵 LÉO</p><ul id="listaValeLeo" class="text-sm text-gray-600 dark:text-gray-400 ml-5 list-disc"></ul><p class="text-blue-500 font-bold text-sm mt-2 ml-5 bg-blue-50 dark:bg-blue-900/20 inline-block px-2.5 py-1 rounded-md">TOTAL = R$ <span id="valeLeo">0,00</span></p></div>
-          </div>
-          <hr class="my-4 border-gray-100 dark:border-gray-800" />
-          <p class="font-black text-gray-800 dark:text-white text-lg text-center bg-gray-50 dark:bg-gray-800 py-2 rounded-lg">TOTAL GERAL: R$ <span id="valeTotal">0,00</span></p>
-          <button onclick="verDetalhes('vale')" class="mt-4 w-full bg-blue-50 hover:bg-blue-100 dark:bg-gray-800 text-blue-700 dark:text-blue-400 font-bold py-2 rounded-xl transition-colors">+ Mostrar detalhes</button>
-        </div>
-
-        <div class="bg-white dark:bg-gray-900 border-l-4 border-red-500 p-5 rounded-2xl shadow-md">
-          <h3 class="font-extrabold text-black dark:text-white text-lg mb-4 border-b border-gray-100 dark:border-gray-800 pb-2">📅 PAGAMENTO ➔ Dia 30</h3>
-          <div class="space-y-4">
-            <div><p class="text-red-500 font-bold text-sm tracking-wider mb-1">🔴 ALINE</p><ul id="listaPagAline" class="text-sm text-gray-600 dark:text-gray-400 ml-5 list-disc"></ul><p class="text-red-500 font-bold text-sm mt-2 ml-5 bg-red-50 dark:bg-red-900/20 inline-block px-2.5 py-1 rounded-md">TOTAL = R$ <span id="pagAline">0,00</span></p></div>
-            <div><p class="text-blue-500 font-bold text-sm tracking-wider mb-1">🔵 LÉO</p><ul id="listaPagLeo" class="text-sm text-gray-600 dark:text-gray-400 ml-5 list-disc"></ul><p class="text-blue-500 font-bold text-sm mt-2 ml-5 bg-blue-50 dark:bg-blue-900/20 inline-block px-2.5 py-1 rounded-md">TOTAL = R$ <span id="pagLeo">0,00</span></p></div>
-          </div>
-          <hr class="my-4 border-gray-100 dark:border-gray-800" />
-          <p class="font-black text-gray-800 dark:text-white text-lg text-center bg-gray-50 dark:bg-gray-800 py-2 rounded-lg">TOTAL GERAL: R$ <span id="pagTotal">0,00</span></p>
-          <button onclick="verDetalhes('pagamento')" class="mt-4 w-full bg-red-50 hover:bg-red-100 dark:bg-gray-800 text-red-700 dark:text-red-400 font-bold py-2 rounded-xl transition-colors">+ Mostrar detalhes</button>
-        </div>
-
-        <div class="bg-white dark:bg-gray-900 border-l-4 border-emerald-500 p-5 rounded-2xl shadow-md">
-          <h3 class="font-extrabold text-black dark:text-white text-lg mb-3">💳 RESUMO CARTÕES</h3>
-          <div class="space-y-1 text-sm md:text-base">
-            <p class="text-purple-600 font-semibold">🟣 Nubank: R$ <span id="cartaoNubank">0,00</span></p>
-            <p class="text-orange-500 font-semibold">🟠 Itaú: R$ <span id="cartaoItau">0,00</span></p>
-            <p class="text-blue-500 font-semibold">🔵 Mercado Livre: R$ <span id="cartaoMercado">0,00</span></p>
-            <hr class="my-3 border-gray-100 dark:border-gray-800" />
-            <p class="font-black text-gray-800 dark:text-white text-lg">Total Faturas: R$ <span id="cartaoTotal">0,00</span></p>
-          </div>
-          <button onclick="verDetalhes('cartoes')" class="mt-4 w-full bg-emerald-50 hover:bg-emerald-100 dark:bg-gray-800 text-emerald-700 dark:text-emerald-400 font-bold py-2 rounded-xl transition-colors">+ Mostrar detalhes</button>
-        </div>
-      </div>
-
-      <div id="tab-transacoes" class="space-y-3 escondido">
-        <h3 class="font-extrabold text-black dark:text-white text-lg mb-4 text-center">Extrato Cronológico</h3>
-        <div id="listaTransacoes" class="space-y-3"></div>
-      </div>
-
-      <div id="tab-resumos" class="space-y-5 escondido">
-        
-        <div class="bg-white dark:bg-gray-900 p-5 rounded-2xl shadow-md border-l-4 border-emerald-500">
-          <h3 class="font-extrabold text-black dark:text-white text-lg mb-4 border-b border-gray-100 dark:border-gray-800 pb-2">💵 Dinheiro que Entra</h3>
-          <div class="space-y-4">
-            <div><p class="text-xs text-gray-500 font-bold uppercase mb-1">Vale Aline (Dia 15)</p><input type="number" step="0.01" id="rendaValeAline" class="w-full p-2.5 border rounded-lg bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-700 outline-none text-emerald-600 font-bold"></div>
-            <div><p class="text-xs text-gray-500 font-bold uppercase mb-1">Vale Léo (Dia 15)</p><input type="number" step="0.01" id="rendaValeLeo" class="w-full p-2.5 border rounded-lg bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-700 outline-none text-emerald-600 font-bold"></div>
-            <div><p class="text-xs text-gray-500 font-bold uppercase mb-1">Pagamento Aline (Dia 30)</p><input type="number" step="0.01" id="rendaPagAline" class="w-full p-2.5 border rounded-lg bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-700 outline-none text-emerald-600 font-bold"></div>
-            <div><p class="text-xs text-gray-500 font-bold uppercase mb-1">Pagamento Léo (Dia 30)</p><input type="number" step="0.01" id="rendaPagLeo" class="w-full p-2.5 border rounded-lg bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-700 outline-none text-emerald-600 font-bold"></div>
-            <div><p class="text-xs text-gray-500 font-bold uppercase mb-1">Pensão Allice (Atribuído p/ Aline)</p><input type="number" step="0.01" id="rendaPensao" class="w-full p-2.5 border rounded-lg bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-700 outline-none text-emerald-600 font-bold"></div>
-            <button onclick="salvarRendasFixas()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold p-3 rounded-xl shadow-md" id="btnSalvarRendas">Salvar Entradas Fixas</button>
-            
-            <hr class="border-gray-100 dark:border-gray-800 my-4">
-            
-            <div class="flex justify-between items-center mb-2">
-               <h4 class="font-bold text-gray-700 dark:text-gray-300 text-sm uppercase">Extras deste mês</h4>
-               <button onclick="abrirModalRendaExtra()" class="bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 font-bold py-1.5 px-3 rounded-lg text-xs transition-colors shadow-sm">+ Adicionar</button>
-            </div>
-            <div id="listaRendasExtras" class="space-y-2"></div>
-          </div>
-        </div>
-
-        <div class="bg-white dark:bg-gray-900 p-5 rounded-2xl shadow-md border-l-4 border-yellow-500">
-          <h3 class="font-extrabold text-black dark:text-white text-lg mb-4 border-b border-gray-100 dark:border-gray-800 pb-2">🎯 Teto de Gastos (Meta)</h3>
-          <div class="space-y-4">
-            <div>
-               <p class="text-xs text-gray-500 font-bold uppercase mb-1">Teto Máximo Aline</p>
-               <input type="number" step="0.01" id="tetoAline" class="w-full p-2.5 border rounded-lg bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-700 outline-none text-yellow-600 font-bold" placeholder="Ex: 1500.00">
-            </div>
-            <div>
-               <p class="text-xs text-gray-500 font-bold uppercase mb-1">Teto Máximo Léo</p>
-               <input type="number" step="0.01" id="tetoLeo" class="w-full p-2.5 border rounded-lg bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-700 outline-none text-yellow-600 font-bold" placeholder="Ex: 1800.00">
-            </div>
-            <button onclick="salvarTetoFixas()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold p-3 rounded-xl shadow-md" id="btnSalvarTeto">Salvar Teto de Gastos</button>
-          </div>
-        </div>
-
-        <div class="bg-white dark:bg-gray-900 p-5 rounded-2xl shadow-md border-l-4 border-red-500">
-          <h3 class="font-extrabold text-black dark:text-white text-lg mb-4 border-b border-gray-100 dark:border-gray-800 pb-2">🔍 Previsão de Contas</h3>
-          <div class="space-y-3">
-            <select id="resumoTipoSel" onchange="preencherSubItensResumo()" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-700 outline-none">
-              <option value="todos">Todas as Categorias</option>
-              <option value="cartao">💳 Cartões</option>
-              <option value="moradia">🏠 Moradia</option>
-              <option value="outros">📝 Outras Contas</option>
-            </select>
-            
-            <select id="resumoSubItemSel" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-700 outline-none">
-              <option value="todos">Qualquer item (Todos)</option>
-            </select>
-
-            <select id="resumoPessoaSel" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-700 outline-none">
-              <option value="todos">Todas as Pessoas</option>
-              <option value="aline">Só Aline</option>
-              <option value="leo">Só Léo</option>
-              <option value="ambos">Ambos (Meio a meio)</option>
-            </select>
-            <button onclick="gerarResumoDividas()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold p-3 rounded-xl shadow-md">Gerar Resumo</button>
-          </div>
-          <div id="resultadoResumo" class="mt-4 space-y-2"></div>
-        </div>
-
-      </div>
-
-    </div>
-
-    <div class="absolute bottom-0 w-full max-w-md bg-white dark:bg-gray-900 shadow-[0_-5px_20px_rgba(0,0,0,0.15)] rounded-t-3xl z-40 px-6 py-3 flex justify-between items-end pb-6">
-      <button id="nav-btn-0" onclick="mudarAba(0)" class="flex flex-col items-center p-2 text-blue-600 dark:text-blue-400 transition-colors"><svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg><span class="text-[10px] font-bold">Home</span></button>
-      <button id="nav-btn-1" onclick="mudarAba(1)" class="flex flex-col items-center p-2 text-gray-400 hover:text-blue-500 transition-colors"><svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg><span class="text-[10px] font-bold">Meses</span></button>
-      <div class="relative w-16 flex justify-center"><button onclick="abrirModal()" class="absolute bottom-2 w-16 h-16 bg-gradient-to-r from-emerald-500 to-green-600 rounded-full shadow-[0_5px_15px_rgba(16,185,129,0.5)] text-white flex items-center justify-center transform transition-transform hover:scale-110 active:scale-95 border-4 border-white dark:border-gray-900 z-50"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg></button></div>
-      <button id="nav-btn-2" onclick="mudarAba(2)" class="flex flex-col items-center p-2 text-gray-400 hover:text-blue-500 transition-colors"><svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg><span class="text-[10px] font-bold">Extrato</span></button>
-      <button id="nav-btn-3" onclick="mudarAba(3)" class="flex flex-col items-center p-2 text-gray-400 hover:text-blue-500 transition-colors"><svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055zM20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg><span class="text-[10px] font-bold">Dados</span></button>
-    </div>
-
-    <!-- MODAIS DO SISTEMA -->
-    <div id="modalAdd" class="escondido absolute inset-0 bg-gray-900/70 backdrop-blur-sm flex justify-center items-end pb-0 z-50">
-      <div class="bg-white dark:bg-gray-900 w-full rounded-t-3xl p-6 shadow-2xl"><div class="flex justify-between items-center mb-6"><h3 class="font-black text-2xl text-gray-800 dark:text-white">Nova Conta</h3><button onclick="fecharModal()" class="text-gray-400 text-2xl font-bold">&times;</button></div><div id="modalConteudo" class="space-y-4"></div></div>
-    </div>
-    
-    <div id="modalRendaExtra" class="escondido absolute inset-0 bg-gray-900/70 backdrop-blur-sm flex justify-center items-end pb-0 z-50">
-      <div class="bg-white dark:bg-gray-900 w-full rounded-t-3xl p-6 shadow-2xl"><div class="flex justify-between items-center mb-6"><h3 class="font-black text-2xl text-emerald-600 dark:text-emerald-400">💵 Nova Entrada</h3><button onclick="fecharModalRendaExtra()" class="text-gray-400 text-2xl font-bold">&times;</button></div><div class="space-y-4"><p class="font-bold text-gray-700 dark:text-gray-300">De quem é a entrada?</p><select id="rendaExtraPessoa" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white outline-none"><option value="aline">Só Aline</option><option value="leo">Só Léo</option><option value="ambos">Ambos (Meio a meio)</option></select><p class="font-bold text-gray-700 dark:text-gray-300">Descrição (Ex: 13º, Férias):</p><input type="text" id="rendaExtraDesc" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white outline-none"><p class="font-bold text-gray-700 dark:text-gray-300">Valor (R$):</p><input type="number" step="0.01" id="rendaExtraValor" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white text-xl font-bold outline-none"><p class="font-bold text-gray-700 dark:text-gray-300">Gerar por quantos meses?</p><input type="number" id="rendaExtraParcelas" value="1" min="1" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white outline-none"><button onclick="salvarRendaExtra()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-4 rounded-xl font-extrabold text-lg shadow-md transition-all" id="btnSalvarRendaExtra">Salvar Entrada ☁️</button></div></div>
-    </div>
-
-    <div id="modalPoupanca" class="escondido absolute inset-0 bg-gray-900/70 backdrop-blur-sm flex justify-center items-end pb-0 z-50">
-      <div class="bg-white dark:bg-gray-900 w-full rounded-t-3xl p-6 shadow-2xl"><div class="flex justify-between items-center mb-6"><h3 class="font-black text-2xl text-gray-800 dark:text-white">🏦 Depósito</h3><button onclick="fecharModalPoupanca()" class="text-gray-400 text-2xl font-bold">&times;</button></div><div class="space-y-4"><p class="font-bold text-gray-700 dark:text-gray-300">Quem está guardando?</p><select id="poupDivisao" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white"><option value="ambos">Os Dois</option><option value="aline">Só Aline</option><option value="leo">Só Léo</option></select><p class="font-bold text-gray-700 dark:text-gray-300">Qual o Valor (R$)?</p><input type="number" step="0.01" id="poupValor" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white text-xl font-bold"><p class="font-bold text-gray-700 dark:text-gray-300">Origem (Opcional):</p><input type="text" id="poupDesc" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white"><button onclick="salvarPoupanca()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white p-4 rounded-xl font-extrabold text-lg" id="btnSalvarPoupanca">CONFIRMAR</button></div></div>
-    </div>
-    
-    <div id="modalSaldo" class="escondido absolute inset-0 bg-gray-900/70 backdrop-blur-sm flex justify-center items-end pb-0 z-50">
-      <div class="bg-white dark:bg-gray-900 w-full rounded-t-3xl p-6 shadow-2xl"><div class="flex justify-between items-center mb-6"><h3 class="font-black text-2xl text-gray-800 dark:text-white">💰 Atualizar Saldo</h3><button onclick="fecharModalSaldo()" class="text-gray-400 text-2xl font-bold">&times;</button></div><div class="space-y-4"><p class="font-bold text-gray-700 dark:text-gray-300">Qual item?</p><select id="saldoItem" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white"><option value="Pão">🥖 Pão</option><option value="Ração">🐕 Ração</option><option value="Gasolina">⛽ Gasolina</option></select><p class="font-bold text-gray-700 dark:text-gray-300">Novo Saldo (R$):</p><input type="number" step="0.01" id="saldoValor" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white text-xl font-bold"><button onclick="salvarNovoSaldo()" class="w-full bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-xl font-extrabold text-lg" id="btnSalvarSaldo">Salvar Saldo</button></div></div>
-    </div>
-    
-    <div id="modalDetalhes" class="escondido absolute inset-0 bg-gray-900/70 backdrop-blur-sm flex justify-center items-end z-50">
-      <div class="bg-white dark:bg-gray-900 w-full h-[85%] rounded-t-3xl p-6 shadow-2xl flex flex-col"><div class="flex justify-between items-center mb-4 border-b border-gray-100 dark:border-gray-800 pb-3"><h3 id="detalhesTitulo" class="font-black text-xl text-gray-800 dark:text-white">Detalhes</h3><button onclick="fecharDetalhes()" class="text-gray-400 text-2xl font-bold">&times;</button></div><div id="detalhesConteudo" class="flex-1 overflow-y-auto space-y-1 pr-2 custom-scrollbar"></div></div>
-    </div>
-    
-    <div id="modalAcaoItem" class="escondido absolute inset-0 bg-gray-900/80 backdrop-blur-sm flex justify-center items-center z-50 p-5">
-      <div class="bg-white dark:bg-gray-900 w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center"><h3 id="acaoItemTitulo" class="font-black text-lg text-gray-800 dark:text-white mb-2">Gerenciar</h3><p class="text-sm text-gray-500 mb-6">O que deseja fazer?</p><div class="space-y-3"><button onclick="abrirAlterarItem()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-3.5 rounded-xl shadow-md">✏️ ALTERAR</button><button id="btnExcluirItemUI" onclick="perguntarExcluirItem()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold p-3.5 rounded-xl shadow-md transition-all">🗑️ EXCLUIR</button><button onclick="fecharAcaoItem()" class="w-full bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold p-3 rounded-xl">Cancelar</button></div></div>
-    </div>
-    
-    <div id="modalAlterar" class="escondido absolute inset-0 bg-gray-900/70 backdrop-blur-sm flex justify-center items-end z-50">
-      <div class="bg-white dark:bg-gray-900 w-full rounded-t-3xl p-6 shadow-2xl"><div class="flex justify-between items-center mb-4"><h3 class="font-black text-xl text-gray-800 dark:text-white">Alterar</h3><button onclick="fecharAlterar()" class="text-gray-400 text-2xl font-bold">&times;</button></div><div class="space-y-4"><p class="font-bold text-gray-700 dark:text-gray-300">Descrição:</p><input type="text" id="altDesc" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white"><p class="font-bold text-gray-700 dark:text-gray-300">Novo Valor (R$):</p><input type="number" step="0.01" id="altValor" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white"><p class="font-bold text-gray-700 dark:text-gray-300">Gerar quantas parcelas pra frente?</p><input type="number" id="altParcelas" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white"><button onclick="salvarAlteracao()" class="w-full bg-emerald-600 text-white p-4 rounded-xl font-bold transition-all" id="btnSalvarAlt">Salvar Alteração</button></div></div>
-    </div>
-
   </div>
 
-  <script>
-    const URL_PLANILHA = "https://script.google.com/macros/s/AKfycbyMFPK7YfVPJghfVlR0NLDnZjJqZuZOHHlX2A4GYW58djeyKp7euTHJDlfz0RMkV8dKWg/exec"; 
-
-    let contas = [];
-    const dataHoje = new Date();
-    let mesAtualIndex = dataHoje.getMonth(); 
-    let anoAtual = dataHoje.getFullYear();
-    const meses = ["JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"];
-    let tempConta = {}, itemSelecionado = null;
-    let chartAlineInst = null, chartLeoInst = null;
-    
-    let abaAtual = 0;
-    const idsAbas = ['tab-home', 'tab-meses', 'tab-transacoes', 'tab-resumos'];
-    
-    const swipeArea = document.getElementById('swipe-area');
-    const topBar = document.getElementById('topBar');
-    let ultimaRolagemY = 0;
-    let topBarOculta = false;
-
-    async function refreshApp(btn) {
-       const svg = btn.querySelector('svg');
-       svg.classList.add('animate-spin');
-       await buscarDadosDaPlanilha();
-       svg.classList.remove('animate-spin');
-    }
-
-    function mudarAba(index) {
-      abaAtual = index;
-      idsAbas.forEach((id, i) => {
-         const aba = document.getElementById(id);
-         const btn = document.getElementById('nav-btn-' + i);
-         if(i === index) {
-            aba.classList.remove('escondido');
-            btn.classList.add('text-blue-600', 'dark:text-blue-400');
-            btn.classList.remove('text-gray-400', 'hover:text-blue-500');
-         } else {
-            aba.classList.add('escondido');
-            btn.classList.remove('text-blue-600', 'dark:text-blue-400');
-            btn.classList.add('text-gray-400', 'hover:text-blue-500');
-         }
-      });
-      topBar.style.marginTop = "0px";
-      topBarOculta = false;
-      ultimaRolagemY = 0;
-      swipeArea.scrollTop = 0;
-      atualizarTela(); 
-    }
-    
-    let touchstartX = 0, touchstartY = 0, touchendX = 0, touchendY = 0;
-    swipeArea.addEventListener('touchstart', e => { 
-        touchstartX = e.changedTouches[0].screenX; 
-        touchstartY = e.changedTouches[0].screenY; 
-    }, {passive: true});
-    
-    swipeArea.addEventListener('touchend', e => { 
-       touchendX = e.changedTouches[0].screenX; 
-       touchendY = e.changedTouches[0].screenY; 
-       let diffX = Math.abs(touchendX - touchstartX);
-       let diffY = Math.abs(touchendY - touchstartY);
-       if (diffX > diffY && diffX > 100) {
-           if (touchendX < touchstartX) mudarAba(Math.min(abaAtual + 1, 3));
-           if (touchendX > touchstartX) mudarAba(Math.max(abaAtual - 1, 0));
-       }
-    }, {passive: true});
-
-    swipeArea.addEventListener('scroll', () => {
-       let atualRolagemY = Math.max(0, swipeArea.scrollTop);
-       let maxScroll = swipeArea.scrollHeight - swipeArea.clientHeight;
-       let pertoDoFim = (maxScroll - atualRolagemY) < 90;
-
-       if (atualRolagemY <= 10) {
-          if (topBarOculta) {
-             topBar.style.marginTop = "0px";
-             topBarOculta = false;
-          }
-          ultimaRolagemY = 0;
-          return;
-       }
-
-       if (!pertoDoFim) {
-          if (atualRolagemY - ultimaRolagemY > 15 && atualRolagemY > 60 && !topBarOculta) {
-             topBar.style.marginTop = `-${topBar.offsetHeight}px`;
-             topBarOculta = true;
-          } else if (ultimaRolagemY - atualRolagemY > 25 && topBarOculta) {
-             topBar.style.marginTop = "0px";
-             topBarOculta = false;
-          }
-       }
-       ultimaRolagemY = atualRolagemY; 
-    }, {passive: true});
-
-    verificarTemaSalvo();
-    buscarDadosDaPlanilha();
-
-    function toggleDarkMode() {
-      document.documentElement.classList.toggle('dark');
-      const isDark = document.documentElement.classList.contains('dark');
-      localStorage.setItem('theme', isDark ? 'dark' : 'light');
-      atualizarIconeTema(isDark);
-    }
-
-    function verificarTemaSalvo() {
-      const isDark = localStorage.getItem('theme') === 'dark';
-      if (isDark) document.documentElement.classList.add('dark');
-      atualizarIconeTema(isDark);
-    }
-
-    function atualizarIconeTema(isDark) {
-      const icone = document.getElementById('iconeTema');
-      icone.innerHTML = isDark 
-        ? `<svg class="w-5 h-5 text-yellow-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>`
-        : `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>`;
-    }
-
-    async function buscarDadosDaPlanilha() {
-      try {
-        const resposta = await fetch(URL_PLANILHA);
-        contas = await resposta.json();
-        atualizarTela();
-      } catch (erro) { console.error("Erro:", erro); }
-    }
-
-    function mudarMes(direcao) {
-      mesAtualIndex += direcao;
-      if (mesAtualIndex < 0) { mesAtualIndex = 11; anoAtual--; } 
-      else if (mesAtualIndex > 11) { mesAtualIndex = 0; anoAtual++; }
-      atualizarTela();
-    }
-
-    function getTop5HTML(resumoDict) {
-      let items = [];
-      for (let label in resumoDict) { if (resumoDict[label] > 0) items.push({ label, val: resumoDict[label] }); }
-      items.sort((a, b) => b.val - a.val);
-      let html = '';
-      items.slice(0, 5).forEach(item => { html += `<li><span class="font-medium">${item.label}:</span> ${item.val.toFixed(2).replace('.', ',')}</li>`; });
-      if (items.length > 5) html += `<li class="text-gray-400 text-xs italic mt-1">+ outros</li>`;
-      if (items.length === 0) html += `<li class="text-gray-400 italic">Nenhum lançamento</li>`;
-      return html;
-    }
-
-    let rendaAlineMes = 0, rendaLeoMes = 0, tetoAlineMes = 0, tetoLeoMes = 0, gastosAlineMes = 0, gastosLeoMes = 0;
-
-    function atualizarTela() {
-      document.getElementById('mesAtual').innerText = meses[mesAtualIndex];
-      document.getElementById('anoAtual').innerText = anoAtual;
-
-      document.getElementById('rendaValeAline').value = '';
-      document.getElementById('rendaValeLeo').value = '';
-      document.getElementById('rendaPagAline').value = '';
-      document.getElementById('rendaPagLeo').value = '';
-      document.getElementById('rendaPensao').value = '';
-      document.getElementById('tetoAline').value = '';
-      document.getElementById('tetoLeo').value = '';
-
-      let valeAline = 0, valeLeo = 0, valeTotal = 0;
-      let pagAline = 0, pagLeo = 0, pagTotal = 0;
-      let cartaoNubank = 0, cartaoItau = 0, cartaoMercado = 0, cartaoTotal = 0;
-      let poupAline = 0, poupLeo = 0, poupTotal = 0;
-      let saldoPao = 0, saldoRacao = 0, saldoGasolina = 0;
-      let ultimaDataSaldo = "Nunca";
-      
-      let dictValeAline = {}, dictValeLeo = {}, dictPagAline = {}, dictPagLeo = {};
-      rendaAlineMes = 0; rendaLeoMes = 0; tetoAlineMes = 0; tetoLeoMes = 0; gastosAlineMes = 0; gastosLeoMes = 0;
-
-      let extratoItens = [];
-      let rendasExtrasMesAtuais = [];
-      let dataAtualView = anoAtual * 12 + mesAtualIndex;
-
-      contas.forEach((conta, index) => {
-        if (conta.tipo === 'renda') {
-           let val = Number(conta.valorOriginal) || 0;
-           if(conta.descricao === 'Renda_Vale_Aline') { document.getElementById('rendaValeAline').value = val; rendaAlineMes += val; }
-           if(conta.descricao === 'Renda_Vale_Leo') { document.getElementById('rendaValeLeo').value = val; rendaLeoMes += val; }
-           if(conta.descricao === 'Renda_Pag_Aline') { document.getElementById('rendaPagAline').value = val; rendaAlineMes += val; }
-           if(conta.descricao === 'Renda_Pag_Leo') { document.getElementById('rendaPagLeo').value = val; rendaLeoMes += val; }
-           if(conta.descricao === 'Renda_Pensao') { document.getElementById('rendaPensao').value = val; rendaAlineMes += val; }
-           if(conta.descricao === 'Teto_Aline') { document.getElementById('tetoAline').value = val; tetoAlineMes = val; }
-           if(conta.descricao === 'Teto_Leo') { document.getElementById('tetoLeo').value = val; tetoLeoMes = val; }
-        }
-        else if (conta.tipo === 'renda_extra') {
-           if (Number(conta.mes) === mesAtualIndex && Number(conta.ano) === anoAtual) {
-              let val = Number(conta.valorOriginal) || 0;
-              if (conta.divisao === 'aline') rendaAlineMes += val;
-              else if (conta.divisao === 'leo') rendaLeoMes += val;
-              else { rendaAlineMes += val/2; rendaLeoMes += val/2; }
-              rendasExtrasMesAtuais.push({ idx: index, conta: conta });
-              extratoItens.push({ idx: index, conta: conta, isRenda: true });
-           }
-        }
-        else if (conta.tipo === 'saldo') {
-          if (conta.descricao === 'Pão') saldoPao = Number(conta.valorOriginal);
-          if (conta.descricao === 'Ração') saldoRacao = Number(conta.valorOriginal);
-          if (conta.descricao === 'Gasolina') saldoGasolina = Number(conta.valorOriginal);
-          if (conta.periodo && conta.periodo !== 'ambos') ultimaDataSaldo = conta.periodo; 
-        }
-        else if (conta.tipo === 'poupanca') {
-          if (Number(conta.ano) < anoAtual || (Number(conta.ano) === anoAtual && Number(conta.mes) <= mesAtualIndex)) {
-            poupAline += Number(conta.valorAline); poupLeo += Number(conta.valorLeo); poupTotal += Number(conta.valorOriginal);
-          }
-        }
-        else {
-          let isFixa = conta.descricao.includes('(Fixo)');
-          let dataCriacao = Number(conta.ano) * 12 + Number(conta.mes);
-          let ehMesAtual = false;
-
-          if (isFixa) {
-              let dataFim = 999999;
-              let matchFim = conta.descricao.match(/\(Fixo até (\d{2})\/(\d{4})\)/);
-              if (matchFim) dataFim = parseInt(matchFim[2]) * 12 + (parseInt(matchFim[1]) - 1);
-              ehMesAtual = (dataAtualView >= dataCriacao && dataAtualView <= dataFim);
-          } else {
-              ehMesAtual = (Number(conta.mes) === mesAtualIndex && Number(conta.ano) === anoAtual);
-          }
-
-          if (ehMesAtual) {
-            let label = conta.descricao.replace(/\s\(\d+\/\d+\)$/, '').replace(/\s\(Fixo.*\)/, ''); 
-            if (conta.tipo === 'moradia') label = 'Moradia';
-            if (conta.tipo === 'cartao') label = 'Cartões';
-
-            let valA = Number(conta.valorAline) || 0;
-            let valL = Number(conta.valorLeo) || 0;
-            gastosAlineMes += valA;
-            gastosLeoMes += valL;
-
-            if (conta.periodo === 'vale') {
-              valeAline += valA; valeLeo += valL; valeTotal += Number(conta.valorOriginal);
-              if(valA > 0) dictValeAline[label] = (dictValeAline[label] || 0) + valA;
-              if(valL > 0) dictValeLeo[label] = (dictValeLeo[label] || 0) + valL;
-            } else if (conta.periodo === 'pagamento') {
-              pagAline += valA; pagLeo += valL; pagTotal += Number(conta.valorOriginal);
-              if(valA > 0) dictPagAline[label] = (dictPagAline[label] || 0) + valA;
-              if(valL > 0) dictPagLeo[label] = (dictPagLeo[label] || 0) + valL;
-            }
-
-            if (conta.tipo === 'cartao') {
-              if (conta.descricao.includes('Nubank')) cartaoNubank += Number(conta.valorOriginal);
-              else if (conta.descricao.includes('Itaú')) cartaoItau += Number(conta.valorOriginal);
-              else if (conta.descricao.includes('Mercado Livre')) cartaoMercado += Number(conta.valorOriginal);
-              cartaoTotal += Number(conta.valorOriginal);
-            }
-            extratoItens.push({ idx: index, conta: conta, isRenda: false });
-          }
-        }
-      });
-
-      let rendasExtrasHTML = '';
-      if(rendasExtrasMesAtuais.length === 0) {
-          rendasExtrasHTML = '<p class="text-xs text-gray-400 italic">Nenhuma entrada extra adicionada neste mês.</p>';
-      } else {
-          rendasExtrasMesAtuais.forEach(item => {
-             rendasExtrasHTML += `
-               <div onclick="abrirAcaoItem(${item.idx})" class="flex justify-between items-center bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-xl border border-emerald-100 dark:border-emerald-800/50 cursor-pointer transition-colors hover:bg-emerald-100 dark:hover:bg-emerald-900/40">
-                  <div>
-                     <p class="text-sm font-bold text-emerald-800 dark:text-emerald-300">${item.conta.descricao}</p>
-                     <p class="text-[10px] text-emerald-600 dark:text-emerald-500 uppercase">${item.conta.divisao}</p>
-                  </div>
-                  <span class="text-sm font-black text-emerald-600 dark:text-emerald-400">+ R$ ${Number(item.conta.valorOriginal).toFixed(2).replace('.',',')}</span>
-               </div>`;
-          });
-      }
-      document.getElementById('listaRendasExtras').innerHTML = rendasExtrasHTML;
-
-      let tetoA = tetoAlineMes > 0 ? tetoAlineMes : rendaAlineMes;
-      let tetoL = tetoLeoMes > 0 ? tetoLeoMes : rendaLeoMes;
-      let livreAline = tetoA - gastosAlineMes; 
-      let livreLeo = tetoL - gastosLeoMes;
-
-      document.getElementById('homeEntradasAline').innerText = rendaAlineMes.toFixed(2).replace('.',',');
-      document.getElementById('homeGastosAline').innerText = gastosAlineMes.toFixed(2).replace('.',',');
-      document.getElementById('homeSaldoAline').innerText = livreAline.toFixed(2).replace('.',',');
-      document.getElementById('homeLabelSaldoAline').className = livreAline < 0 ? 'text-[10px] text-red-500 font-bold uppercase' : 'text-[10px] text-emerald-500 font-bold uppercase';
-      document.getElementById('homeSaldoAlineContainer').className = livreAline < 0 ? 'text-red-500 font-black text-xs whitespace-nowrap' : 'text-emerald-500 font-black text-xs whitespace-nowrap';
-
-      document.getElementById('homeEntradasLeo').innerText = rendaLeoMes.toFixed(2).replace('.',',');
-      document.getElementById('homeGastosLeo').innerText = gastosLeoMes.toFixed(2).replace('.',',');
-      document.getElementById('homeSaldoLeo').innerText = livreLeo.toFixed(2).replace('.',',');
-      document.getElementById('homeLabelSaldoLeo').className = livreLeo < 0 ? 'text-[10px] text-red-500 font-bold uppercase' : 'text-[10px] text-emerald-500 font-bold uppercase';
-      document.getElementById('homeSaldoLeoContainer').className = livreLeo < 0 ? 'text-red-500 font-black text-xs whitespace-nowrap' : 'text-emerald-500 font-black text-xs whitespace-nowrap';
-      
-      document.getElementById('listaValeAline').innerHTML = getTop5HTML(dictValeAline);
-      document.getElementById('listaValeLeo').innerHTML = getTop5HTML(dictValeLeo);
-      document.getElementById('listaPagAline').innerHTML = getTop5HTML(dictPagAline);
-      document.getElementById('listaPagLeo').innerHTML = getTop5HTML(dictPagLeo);
-      document.getElementById('valeAline').innerText = valeAline.toFixed(2).replace('.', ',');
-      document.getElementById('valeLeo').innerText = valeLeo.toFixed(2).replace('.', ',');
-      document.getElementById('valeTotal').innerText = valeTotal.toFixed(2).replace('.', ',');
-      document.getElementById('pagAline').innerText = pagAline.toFixed(2).replace('.', ',');
-      document.getElementById('pagLeo').innerText = pagLeo.toFixed(2).replace('.', ',');
-      document.getElementById('pagTotal').innerText = pagTotal.toFixed(2).replace('.', ',');
-      document.getElementById('cartaoNubank').innerText = cartaoNubank.toFixed(2).replace('.', ',');
-      document.getElementById('cartaoItau').innerText = cartaoItau.toFixed(2).replace('.', ',');
-      document.getElementById('cartaoMercado').innerText = cartaoMercado.toFixed(2).replace('.', ',');
-      document.getElementById('cartaoTotal').innerText = cartaoTotal.toFixed(2).replace('.', ',');
-
-      let transacoesHTML = '';
-      if(extratoItens.length === 0) {
-         transacoesHTML = '<p class="text-center text-gray-500 text-sm mt-5">Nenhuma movimentação neste mês.</p>';
-      } else {
-         extratoItens.reverse().forEach(item => {
-            let iconeTransacao = item.conta.tipo === 'cartao' ? '💳' : (item.conta.tipo === 'moradia' ? '🏠' : '📝');
-            let corValor = "text-red-500"; let sinal = "-"; let descPeriodo = item.conta.periodo;
-            
-            let badgeFixa = item.conta.descricao.includes('(Fixo)') ? '<span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">🔄 FIXA</span>' : '';
-            let labelExibicao = item.conta.descricao.replace(/\s\(Fixo.*\)/, '');
-
-            if (item.isRenda) { iconeTransacao = '💵'; corValor = "text-emerald-500"; sinal = "+"; descPeriodo = "Renda Extra"; }
-            
-            transacoesHTML += `
-              <div onclick="abrirAcaoItem(${item.idx})" class="bg-white dark:bg-gray-800 p-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-between cursor-pointer mb-3">
-                <div class="flex items-center gap-3">
-                  <div class="text-2xl">${iconeTransacao}</div>
-                  <div>
-                    <p class="font-bold text-gray-800 dark:text-gray-200 text-sm">${labelExibicao} ${badgeFixa}</p>
-                    <p class="text-[10px] text-gray-500 uppercase">${item.conta.divisao} • ${descPeriodo}</p>
-                  </div>
-                </div>
-                <div class="text-right">
-                   <p class="font-bold ${corValor} text-sm">${sinal} R$ ${Number(item.conta.valorOriginal).toFixed(2).replace('.',',')}</p>
-                </div>
-              </div>`;
-         });
-      }
-      document.getElementById('listaTransacoes').innerHTML = transacoesHTML;
-
-      document.getElementById('poupAline').innerText = poupAline.toFixed(2).replace('.', ',');
-      document.getElementById('poupLeo').innerText = poupLeo.toFixed(2).replace('.', ',');
-      document.getElementById('poupTotal').innerText = `R$ ${poupTotal.toFixed(2).replace('.', ',')}`;
-      let numeroMeta = Math.ceil(poupTotal / 5000) || 1;
-      let valorMetaAtual = numeroMeta * 5000;
-      let porcentagem = Math.min((poupTotal / valorMetaAtual) * 100, 100);
-      document.getElementById('poupTextoMeta').innerText = `${numeroMeta}ª META: R$ ${valorMetaAtual.toLocaleString('pt-BR')}`;
-      document.getElementById('poupBarra').style.width = `${porcentagem}%`;
-
-      document.getElementById('saldoPao').innerText = saldoPao.toFixed(2).replace('.', ',');
-      document.getElementById('saldoRacao').innerText = saldoRacao.toFixed(2).replace('.', ',');
-      document.getElementById('saldoGasolina').innerText = saldoGasolina.toFixed(2).replace('.', ',');
-      document.getElementById('dataUltimoSaldo').innerText = `Atualizado em ${ultimaDataSaldo}`;
-
-      renderizarGraficos();
-      preencherSubItensResumo(); 
-    }
-
-    function renderizarGraficos() {
-       if (abaAtual !== 0) return; 
-       const corGastos = '#ef4444'; const corLivre = '#10b981';
-       let tetoA = tetoAlineMes > 0 ? tetoAlineMes : rendaAlineMes; 
-       let restanteTetoA = Math.max(0, tetoA - gastosAlineMes); 
-       const ctxAline = document.getElementById('chartAline').getContext('2d');
-       if(chartAlineInst) chartAlineInst.destroy();
-       chartAlineInst = new Chart(ctxAline, { type: 'doughnut', data: { datasets: [{ data: [gastosAlineMes, restanteTetoA], backgroundColor: [corGastos, corLivre], borderWidth: 0 }] }, options: { cutout: '75%', responsive: true, maintainAspectRatio: false, plugins: { tooltip: { enabled: false } } } });
-
-       let tetoL = tetoLeoMes > 0 ? tetoLeoMes : rendaLeoMes; 
-       let restanteTetoL = Math.max(0, tetoL - gastosLeoMes); 
-       const ctxLeo = document.getElementById('chartLeo').getContext('2d');
-       if(chartLeoInst) chartLeoInst.destroy();
-       chartLeoInst = new Chart(ctxLeo, { type: 'doughnut', data: { datasets: [{ data: [gastosLeoMes, restanteTetoL], backgroundColor: [corGastos, corLivre], borderWidth: 0 }] }, options: { cutout: '75%', responsive: true, maintainAspectRatio: false, plugins: { tooltip: { enabled: false } } } });
-    }
-
-    async function fetchComRetry(url, options, retries = 3) {
-        for (let i = 0; i < retries; i++) {
-            try {
-                let response = await fetch(url, options);
-                if (response.ok) return response;
-            } catch (e) {}
-            await new Promise(r => setTimeout(r, 500));
-        }
-        return fetch(url, options);
-    }
-
-    async function executarLoteFetch(itens, mapeador, btnElement = null, prefixo = "Salvando") {
-        if (btnElement && !btnElement.classList.contains('relative')) {
-            btnElement.classList.add('relative', 'overflow-hidden');
-        }
-        for (let i = 0; i < itens.length; i++) {
-            let payload = JSON.stringify(mapeador(itens[i]));
-            await fetchComRetry(URL_PLANILHA, { method: "POST", body: payload });
-            if (btnElement) {
-                let progresso = Math.round(((i + 1) / itens.length) * 100);
-                btnElement.innerHTML = `
-                    <div class="absolute left-0 top-0 bottom-0 bg-black/20 dark:bg-white/20 transition-all duration-200" style="width: ${progresso}%"></div>
-                    <span class="relative z-10">${prefixo} ${progresso}% <span class="text-xs opacity-80">(${i + 1}/${itens.length})</span></span>
-                `;
-            }
-            await new Promise(r => setTimeout(r, 150)); 
-        }
-    }
-
-    async function salvarRendasFixas() {
-      const btn = document.getElementById('btnSalvarRendas'); btn.innerText = "Salvando (Aguarde)..."; btn.disabled = true;
-      const novasRendas = [
-        { desc: 'Renda_Vale_Aline', val: document.getElementById('rendaValeAline').value },
-        { desc: 'Renda_Vale_Leo', val: document.getElementById('rendaValeLeo').value },
-        { desc: 'Renda_Pag_Aline', val: document.getElementById('rendaPagAline').value },
-        { desc: 'Renda_Pag_Leo', val: document.getElementById('rendaPagLeo').value },
-        { desc: 'Renda_Pensao', val: document.getElementById('rendaPensao').value }
-      ];
-      contas = contas.filter(c => !(c.tipo === 'renda' && c.descricao.startsWith('Renda_')));
-      for(let r of novasRendas) {
-        let valFloat = parseFloat(r.val.replace(',', '.'));
-        if(!isNaN(valFloat)) {
-           let obj = { tipo: 'renda', descricao: r.desc, divisao: 'nenhuma', periodo: 'mensal', mes: 99, ano: 9999, valorOriginal: valFloat, valorAline: 0, valorLeo: 0 };
-           contas.push(obj);
-           try { await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: r.desc, mes: 99, ano: 9999, modo: 'apenas_este' }) }); await new Promise(res => setTimeout(res, 400)); await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify(obj) }); await new Promise(res => setTimeout(res, 400)); } catch(e) {}
-        } else {
-           try { await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: r.desc, mes: 99, ano: 9999, modo: 'apenas_este' }) }); await new Promise(res => setTimeout(res, 400)); } catch(e) {}
-        }
-      }
-      atualizarTela(); btn.innerText = "Salvo com sucesso!"; btn.disabled = false; setTimeout(() => { btn.innerText = "Salvar Entradas Fixas"; }, 3000);
-    }
-
-    async function salvarTetoFixas() {
-      const btn = document.getElementById('btnSalvarTeto'); btn.innerText = "Salvando (Aguarde)..."; btn.disabled = true;
-      const novosTetos = [ { desc: 'Teto_Aline', val: document.getElementById('tetoAline').value }, { desc: 'Teto_Leo', val: document.getElementById('tetoLeo').value } ];
-      contas = contas.filter(c => !(c.tipo === 'renda' && c.descricao.startsWith('Teto_')));
-      for(let r of novosTetos) {
-        let valFloat = parseFloat(r.val.replace(',', '.'));
-        if(!isNaN(valFloat)) {
-           let obj = { tipo: 'renda', descricao: r.desc, divisao: 'nenhuma', periodo: 'mensal', mes: 99, ano: 9999, valorOriginal: valFloat, valorAline: 0, valorLeo: 0 };
-           contas.push(obj);
-           try { await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: r.desc, mes: 99, ano: 9999, modo: 'apenas_este' }) }); await new Promise(res => setTimeout(res, 400)); await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify(obj) }); await new Promise(res => setTimeout(res, 400)); } catch(e) {}
-        } else {
-           try { await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: r.desc, mes: 99, ano: 9999, modo: 'apenas_este' }) }); await new Promise(res => setTimeout(res, 400)); } catch(e) {}
-        }
-      }
-      atualizarTela(); btn.innerText = "Salvo com sucesso!"; btn.disabled = false; setTimeout(() => { btn.innerText = "Salvar Teto de Gastos"; }, 3000);
-    }
-
-    function abrirModalRendaExtra() { document.getElementById('rendaExtraDesc').value = ''; document.getElementById('rendaExtraValor').value = ''; document.getElementById('rendaExtraParcelas').value = '1'; document.getElementById('modalRendaExtra').classList.remove('escondido'); }
-    function fecharModalRendaExtra() { document.getElementById('modalRendaExtra').classList.add('escondido'); }
-
-    async function salvarRendaExtra() {
-        let divisao = document.getElementById('rendaExtraPessoa').value; let desc = document.getElementById('rendaExtraDesc').value; let valor = parseFloat(document.getElementById('rendaExtraValor').value.replace(',', '.')); let parc = parseInt(document.getElementById('rendaExtraParcelas').value) || 1;
-        if(!desc || isNaN(valor)) return alert("Preencha a descrição e o valor!");
-        
-        const btn = document.getElementById('btnSalvarRendaExtra'); 
-        btn.innerHTML = "Preparando..."; 
-        btn.disabled = true;
-        
-        let geradas = [];
-        for (let i = 0; i < parc; i++) {
-            let mD = (mesAtualIndex + i) % 12; let aD = anoAtual + Math.floor((mesAtualIndex + i) / 12);
-            let descF = desc; if (parc > 1) descF = `${descF} (${i + 1}/${parc})`;
-            let nc = { tipo: 'renda_extra', descricao: descF, divisao: divisao, periodo: 'mensal', mes: mD, ano: aD, valorOriginal: valor, valorAline: 0, valorLeo: 0 };
-            if (nc.divisao === 'ambos') { nc.valorAline = valor / 2; nc.valorLeo = valor / 2; } else if (nc.divisao === 'aline') { nc.valorAline = valor; } else { nc.valorLeo = valor; }
-            geradas.push(nc);
-        }
-        contas.push(...geradas); atualizarTela(); 
-        
-        try { await executarLoteFetch(geradas, (c) => c, btn, "Salvando"); } catch(e){} 
-        fecharModalRendaExtra(); 
-        btn.innerHTML = "Salvar Entrada ☁️"; 
-        btn.disabled = false;
-    }
-
-    function preencherSubItensResumo() {
-      const tipo = document.getElementById('resumoTipoSel').value; const subSelect = document.getElementById('resumoSubItemSel'); const valorAtual = subSelect.value; 
-      subSelect.innerHTML = '<option value="todos">Qualquer item (Todos)</option>';
-      if (tipo === 'todos') return;
-      let descricoes = new Set(); let ignorar = ['renda', 'saldo', 'poupanca', 'renda_extra'];
-      let dataAtualView = anoAtual * 12 + mesAtualIndex;
-      
-      contas.forEach(c => {
-          let isFixa = c.descricao.includes('(Fixo)');
-          let dataConta = Number(c.ano) * 12 + Number(c.mes);
-          let ehFuturo = false;
-          
-          if (!isFixa) {
-              ehFuturo = (dataConta >= dataAtualView);
-          } else {
-              let dataFim = 999999;
-              let matchFim = c.descricao.match(/\(Fixo até (\d{2})\/(\d{4})\)/);
-              if (matchFim) dataFim = parseInt(matchFim[2]) * 12 + (parseInt(matchFim[1]) - 1);
-              ehFuturo = (dataFim >= dataAtualView);
-          }
-
-          if (ehFuturo && (tipo === 'todos' ? !ignorar.includes(c.tipo) : c.tipo === tipo)) {
-              let descBase = c.descricao.replace(/\s\(\d+\/\d+\)$/, '').replace(/\s\(Fixo.*\)/, ''); 
-              if (tipo === 'cartao') { if (descBase.includes('Nubank')) descricoes.add('Nubank'); else if (descBase.includes('Itaú')) descricoes.add('Itaú'); else if (descBase.includes('Mercado Livre')) descricoes.add('Mercado Livre'); else descricoes.add(descBase); } else { descricoes.add(descBase); }
-          }
-      });
-      Array.from(descricoes).sort().forEach(d => { let selected = (d === valorAtual) ? 'selected' : ''; subSelect.innerHTML += `<option value="${d}" ${selected}>${d}</option>`; });
-    }
-
-    function gerarResumoDividas() {
-      const tipoSel = document.getElementById('resumoTipoSel').value; const subSel = document.getElementById('resumoSubItemSel').value; const pessoaSel = document.getElementById('resumoPessoaSel').value; 
-      let ignorar = ['renda', 'saldo', 'poupanca', 'renda_extra'];
-      let dataAtualView = anoAtual * 12 + mesAtualIndex;
-
-      let dividasFuturas = contas.filter(c => {
-         if (ignorar.includes(c.tipo)) return false;
-         
-         let isFixa = c.descricao.includes('(Fixo)');
-         let dataConta = Number(c.ano) * 12 + Number(c.mes);
-         let ehFuturo = false;
-          
-         if (!isFixa) {
-             ehFuturo = (dataConta >= dataAtualView);
-         } else {
-             let dataFim = 999999;
-             let matchFim = c.descricao.match(/\(Fixo até (\d{2})\/(\d{4})\)/);
-             if (matchFim) dataFim = parseInt(matchFim[2]) * 12 + (parseInt(matchFim[1]) - 1);
-             ehFuturo = (dataFim >= dataAtualView);
-         }
-
-         if (!ehFuturo) return false;
-         let matchTipo = (tipoSel === 'todos' || c.tipo === tipoSel);
-         let matchPessoa = (pessoaSel === 'todos' || c.divisao === pessoaSel);
-         let matchSub = true;
-         if (subSel !== 'todos') { matchSub = c.descricao.includes(subSel); }
-         return matchTipo && matchPessoa && matchSub;
-      });
-
-      let totalDívida = 0; let html = '';
-      if(dividasFuturas.length === 0) { html = '<p class="text-sm text-emerald-500 font-bold mt-4 text-center">Nenhuma conta ou dívida futura encontrada para este filtro!</p>'; } else {
-         dividasFuturas.sort((a,b) => (Number(a.ano) - Number(b.ano)) || (Number(a.mes) - Number(b.mes)));
-         
-         let grupos = {};
-         let ordemGrupos = [];
-         dividasFuturas.forEach(c => {
-            totalDívida += Number(c.valorOriginal);
-            let isFixa = c.descricao.includes('(Fixo)');
-            let nomeLimpo = c.descricao.replace(/\s*\(\d+\/\d+\)$/, '').replace(/\s*\(Fixo.*\)/, '').trim();
-            let chave = nomeLimpo.toLowerCase() + (isFixa ? '_fixa' : '_normal');
-            if (!grupos[chave]) {
-               grupos[chave] = {
-                  nome: nomeLimpo,
-                  total: 0,
-                  qtd: 0,
-                  isFixa: isFixa,
-                  mes: c.mes,
-                  ano: c.ano
-               };
-               ordemGrupos.push(chave);
-            }
-            grupos[chave].total += Number(c.valorOriginal);
-            grupos[chave].qtd += 1;
-         });
-
-         ordemGrupos.forEach(chave => {
-            let g = grupos[chave];
-            let badge = g.isFixa 
-               ? '<span class="ml-2 text-[10px] font-bold text-indigo-500 bg-indigo-50 px-1 rounded dark:bg-indigo-900/50 dark:text-indigo-300">FIXA MENSAL</span>' 
-               : (g.qtd > 1 
-                   ? `<span class="text-[10px] text-gray-500 uppercase block">${g.qtd} parcelas restantes</span>` 
-                   : `<span class="text-[10px] text-gray-500 uppercase block">${meses[Number(g.mes)].substring(0,3)}/${g.ano}</span>`);
-            
-            html += `<div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg flex justify-between items-center text-sm border border-gray-200 dark:border-gray-700"><div><p class="font-bold text-gray-800 dark:text-gray-200">${g.nome} ${badge}</p></div><p class="font-bold text-red-500 whitespace-nowrap ml-2">R$ ${g.total.toFixed(2).replace('.',',')}</p></div>`;
-         });
-         html = `<div class="bg-red-50 dark:bg-red-900/30 p-3 rounded-xl border border-red-200 dark:border-red-800 mb-4 text-center"><p class="text-sm text-red-800 dark:text-red-300 font-bold">Total previsto:</p><p class="text-2xl text-red-600 dark:text-red-400 font-black">R$ ${totalDívida.toFixed(2).replace('.',',')}</p></div>` + html;
-      }
-      document.getElementById('resultadoResumo').innerHTML = html;
-    }
-
-    function abrirModalSaldo() { document.getElementById('saldoValor').value = ''; document.getElementById('modalSaldo').classList.remove('escondido'); }
-    function fecharModalSaldo() { document.getElementById('modalSaldo').classList.add('escondido'); }
-    function obterDataHoraFormatada() { const d=new Date(); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} - ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
-    
-    async function salvarNovoSaldo() {
-      let item = document.getElementById('saldoItem').value; let valor = parseFloat(document.getElementById('saldoValor').value.replace(',', '.')); if(isNaN(valor)) return alert("Digite um valor!");
-      let novoSaldo = { tipo: 'saldo', descricao: item, divisao: 'ambos', periodo: obterDataHoraFormatada(), mes: mesAtualIndex, ano: anoAtual, valorOriginal: valor, valorAline: 0, valorLeo: 0 };
-      const btn = document.getElementById('btnSalvarSaldo'); btn.innerText = "Salvando..."; btn.disabled = true;
-      contas = contas.filter(c => !(c.tipo === 'saldo' && c.descricao === item)); contas.push(novoSaldo); atualizarTela();
-      try { await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify(novoSaldo) }); } catch(e){}
-      fecharModalSaldo(); btn.innerText = "Salvar Saldo"; btn.disabled = false;
-    }
-
-    function abrirModalPoupanca() { document.getElementById('poupValor').value = ''; document.getElementById('poupDesc').value = ''; document.getElementById('modalPoupanca').classList.remove('escondido'); }
-    function fecharModalPoupanca() { document.getElementById('modalPoupanca').classList.add('escondido'); }
-    
-    async function salvarPoupanca() {
-      let divisao = document.getElementById('poupDivisao').value; let valor = parseFloat(document.getElementById('poupValor').value.replace(',', '.')); let desc = document.getElementById('poupDesc').value || "Depósito";
-      if(isNaN(valor)) return alert("Digite um valor!");
-      let novaPoup = { tipo: 'poupanca', descricao: desc, divisao: divisao, periodo: 'poupanca', mes: mesAtualIndex, ano: anoAtual, valorOriginal: valor, valorAline: 0, valorLeo: 0 };
-      if (divisao === 'ambos') { novaPoup.valorAline = valor/2; novaPoup.valorLeo = valor/2; } else if (divisao === 'aline') novaPoup.valorAline = valor; else novaPoup.valorLeo = valor;
-      const btn = document.getElementById('btnSalvarPoupanca'); btn.innerText = "Salvando..."; btn.disabled = true;
-      contas.push(novaPoup); atualizarTela(); 
-      try { await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify(novaPoup) }); } catch(e){}
-      fecharModalPoupanca(); btn.innerText = "CONFIRMAR"; btn.disabled = false;
-    }
-
-    const inputClass = "w-full p-3.5 border rounded-xl bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-700 outline-none";
-    function abrirModal() { tempConta = { tipo: '', descricao: '', valorOriginal: 0, divisao: 'ambos', periodo: '', parcelas: 1, isFixa: false }; document.getElementById('modalAdd').classList.remove('escondido'); renderPasso1(); }
-    function fecharModal() { document.getElementById('modalAdd').classList.add('escondido'); }
-    function renderPasso1() { document.getElementById('modalConteudo').innerHTML = `<p class="font-bold text-gray-700 dark:text-gray-300 mb-3">Qual a categoria?</p><button onclick="escolherTipo('moradia')" class="w-full p-4 border dark:border-gray-700 rounded-xl text-left font-bold text-gray-700 dark:text-white mb-3">🏠 Moradia (Meio a meio)</button><button onclick="escolherTipo('cartao')" class="w-full p-4 border dark:border-gray-700 rounded-xl text-left font-bold text-gray-700 dark:text-white mb-3">💳 Cartões</button><button onclick="escolherTipo('outros')" class="w-full p-4 border dark:border-gray-700 rounded-xl text-left font-bold text-gray-700 dark:text-white">📝 Outras Contas</button>`; }
-    function escolherTipo(tipo) { tempConta.tipo = tipo; if(tipo === 'moradia') tempConta.divisao = 'ambos'; renderPasso2(); }
-    
-    function renderPasso2() {
-      let html = '';
-      if(tempConta.tipo==='moradia') { html += `<p class="font-bold text-gray-700 dark:text-gray-300 mb-2">Qual despesa?</p><select id="inputDescSelect" onchange="const t=document.getElementById('inputDescText'); if(this.value==='Outra')t.classList.remove('escondido'); else t.classList.add('escondido');" class="${inputClass} mb-4"><option>Casa 1</option><option>Água</option><option>Energia</option><option>Internet</option><option value="Outra">Outra ?</option></select><input type="text" id="inputDescText" placeholder="Nome da conta..." class="escondido ${inputClass} mb-4">`; }
-      else if(tempConta.tipo==='cartao') { html += `<p class="font-bold text-gray-700 dark:text-gray-300 mb-2">Qual Cartão?</p><select id="inputCartaoSelect" class="${inputClass} mb-4"><option>Itaú</option></select><p class="font-bold text-gray-700 dark:text-gray-300 mb-2">O que foi comprado?</p><input type="text" id="inputDescText" placeholder="Ex: Máquina" class="${inputClass} mb-4"><p class="font-bold text-gray-700 dark:text-gray-300 mb-2">Quem vai pagar?</p><select id="inputDivisao" class="${inputClass} mb-4"><option value="ambos">Os dois</option><option value="leo">Só Léo</option><option value="aline">Só Aline</option></select>`; }
-      else { html += `<p class="font-bold text-gray-700 dark:text-gray-300 mb-2">Nome da conta:</p><input type="text" id="inputDescText" placeholder="Ex: Açougue..." class="${inputClass} mb-4"><p class="font-bold text-gray-700 dark:text-gray-300 mb-2">De quem é a conta?</p><select id="inputDivisao" class="${inputClass} mb-4"><option value="ambos">Dos dois</option><option value="leo">Só Léo</option><option value="aline">Só Aline</option></select>`; }
-      
-      html += `
-        <label class="flex items-center gap-3 bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 p-4 rounded-xl border dark:border-gray-700 mb-4 cursor-pointer transition-colors shadow-sm mt-2">
-            <input type="checkbox" id="inputFixo" onchange="document.getElementById('divParcelas').style.display = this.checked ? 'none' : 'block'" class="w-6 h-6 text-indigo-600 rounded focus:ring-indigo-500">
-            <span class="font-bold text-gray-700 dark:text-gray-300">🔄 Transformar em Conta Fixa (Todo Mês)</span>
-        </label>
-        <div id="divParcelas">
-            <p class="font-bold text-gray-700 dark:text-gray-300 mb-1">Meses para frente (1 = Só este mês)?</p>
-            <input type="number" id="inputParcelas" value="1" min="1" class="${inputClass} mb-4">
+  <!-- MODAL NOVA / EDITAR OS -->
+  <div id="modal-nova-os" class="modal-overlay" onclick="fecharAoClicarFora(event, 'modal-nova-os')">
+    <div class="modal-content animate-modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2 id="titulo-modal-os">Criar Nova Solicitação</h2>
+        <button type="button" class="btn-icon" onclick="fecharModal('modal-nova-os')" title="Fechar"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div class="modal-body">
+        <div id="msg-aviso-publico" style="background:#eff6ff; color:var(--primary); padding:10px; border-radius:8px; margin-bottom:15px; font-size:0.85rem;">
+          <strong>Aviso:</strong> O número da sua O.S. será gerado automaticamente após salvar.
         </div>
-        <button onclick="irParaPasso3()" class="w-full bg-indigo-600 text-white p-4 rounded-xl font-bold">Avançar ➔</button>`;
-      document.getElementById('modalConteudo').innerHTML = html;
-    }
-    
-    function irParaPasso3() {
-      if (tempConta.tipo === 'moradia') { const s = document.getElementById('inputDescSelect').value; tempConta.descricao = (s === 'Outra') ? document.getElementById('inputDescText').value : s; } 
-      else if (tempConta.tipo === 'cartao') { tempConta.descricao = `${document.getElementById('inputCartaoSelect').value} - ${document.getElementById('inputDescText').value}`; tempConta.divisao = document.getElementById('inputDivisao').value; } 
-      else { tempConta.descricao = document.getElementById('inputDescText').value; tempConta.divisao = document.getElementById('inputDivisao').value; }
-      
-      tempConta.isFixa = document.getElementById('inputFixo') ? document.getElementById('inputFixo').checked : false;
-      tempConta.parcelas = tempConta.isFixa ? 1 : (parseInt(document.getElementById('inputParcelas').value) || 1);
-      
-      if(!tempConta.descricao) return alert("Preencha a descrição!");
-      
-      let tituloValor = tempConta.isFixa ? 'Qual o valor FIXO MENSAL (R$)?' : (tempConta.parcelas > 1 ? 'Valor de CADA parcela (R$):' : 'Qual o valor (R$)?');
-      
-      let periodoHTML = tempConta.tipo === 'cartao' 
-        ? `<select id="inputPeriodo" class="${inputClass} mb-6"><option value="pagamento" selected>Pagamento (Dia 30)</option><option value="vale">Vale (Dia 15)</option></select>` 
-        : `<select id="inputPeriodo" class="${inputClass} mb-6"><option value="vale">Vale (Dia 15)</option><option value="pagamento">Pagamento (Dia 30)</option></select>`;
-      
-      document.getElementById('modalConteudo').innerHTML = `<p class="font-bold text-gray-700 dark:text-gray-300 mb-2">${tituloValor}</p><input type="number" step="0.01" id="inputValor" class="${inputClass} text-xl font-bold mb-5"><p class="font-bold text-gray-700 dark:text-gray-300 mb-3">Vale ou Pagamento?</p>${periodoHTML}<button onclick="salvarContaFinal()" class="w-full bg-emerald-600 text-white p-4 rounded-xl font-extrabold text-lg transition-all" id="btnSalvarLote">Salvar na Nuvem ☁️</button>`;
-    }
-    
-    async function salvarContaFinal() {
-      const v = parseFloat(document.getElementById('inputValor').value.replace(',', '.')); if(isNaN(v)) return alert("Digite o valor!");
-      const p = document.getElementById('inputPeriodo').value; let parc = tempConta.parcelas || 1; let geradas = [];
-      
-      const btn = document.getElementById('btnSalvarLote'); 
-      btn.innerHTML = "Preparando..."; 
-      btn.disabled = true;
 
-      for (let i = 0; i < parc; i++) {
-        let mD = (mesAtualIndex + i) % 12; let aD = anoAtual + Math.floor((mesAtualIndex + i) / 12);
-        let descF = tempConta.descricao; 
-        if (parc > 1 && !tempConta.isFixa) descF = `${descF} (${i + 1}/${parc})`;
-        if (tempConta.isFixa) descF = `${descF} (Fixo)`;
+        <form id="form-nova-os">
+          <input type="hidden" id="edit-os-id">
 
-        let nc = { tipo: tempConta.tipo, descricao: descF, divisao: tempConta.divisao, periodo: p, mes: mD, ano: aD, valorOriginal: v, valorAline: 0, valorLeo: 0 };
-        if (nc.divisao === 'ambos') { nc.valorAline = v / 2; nc.valorLeo = v / 2; } else if (nc.divisao === 'aline') nc.valorAline = v; else nc.valorLeo = v;
-        geradas.push(nc);
-      }
-      contas.push(...geradas); atualizarTela(); 
-      
-      try { await executarLoteFetch(geradas, (c) => c, btn, "Salvando"); } catch(e){} 
-      
-      fecharModal(); 
-      btn.innerHTML = "Salvar na Nuvem ☁️"; 
-      btn.disabled = false;
-    }
+          <!-- 1. MATRÍCULA -->
+          <div class="input-group">
+            <label for="nova-os-matricula">Matrícula</label>
+            <input type="text" id="nova-os-matricula" placeholder="Digite sua matrícula" required>
+          </div>
 
-    function verDetalhes(p) {
-      let t = '';
-      if (p === 'poupanca') { t = 'Detalhes: POUPANÇA'; contasFiltradasNoModal = contas.filter(c => c.tipo === 'poupanca' && (Number(c.ano) < anoAtual || (Number(c.ano) === anoAtual && Number(c.mes) <= mesAtualIndex))); } 
-      else if (p === 'cartoes') { t = 'Detalhes: CARTÕES'; contasFiltradasNoModal = contas.filter(c => Number(c.mes) === mesAtualIndex && Number(c.ano) === anoAtual && c.tipo === 'cartao'); } 
-      else { t = p === 'vale' ? 'Detalhes: VALE' : 'Detalhes: PAGAMENTO'; 
-         let dataAtualView = anoAtual * 12 + mesAtualIndex;
-         contasFiltradasNoModal = contas.filter(c => {
-             if (c.periodo !== p) return false;
-             let isFixa = c.descricao.includes('(Fixo)');
-             if (isFixa) {
-                 let dataCriacao = Number(c.ano) * 12 + Number(c.mes);
-                 let dataFim = 999999;
-                 let matchFim = c.descricao.match(/\(Fixo até (\d{2})\/(\d{4})\)/);
-                 if (matchFim) dataFim = parseInt(matchFim[2]) * 12 + (parseInt(matchFim[1]) - 1);
-                 return (dataAtualView >= dataCriacao && dataAtualView <= dataFim);
-             } else {
-                 return (Number(c.mes) === mesAtualIndex && Number(c.ano) === anoAtual);
-             }
-         });
-      }
-      document.getElementById('detalhesTitulo').innerText = t; renderizarListaDetalhes(p); document.getElementById('modalDetalhes').classList.remove('escondido');
-    }
-    
-    function renderizarListaDetalhes(p) {
-      let h = '';
-      if (contasFiltradasNoModal.length === 0) { document.getElementById('detalhesConteudo').innerHTML = '<p class="text-center mt-5 text-gray-500">Vazio.</p>'; return; } 
-      if (p === 'cartoes') {
-        ['Nubank', 'Itaú', 'Mercado Livre'].forEach(b => {
-          let cb = contasFiltradasNoModal.filter(c => c.descricao.includes(b)); if (cb.length === 0) return;
-          let cor = b === 'Nubank' ? 'text-purple-500' : b === 'Itaú' ? 'text-orange-500' : 'text-blue-500';
-          [{ id: 'ambos', t: `${b} Ambos` }, { id: 'aline', t: `${b} só Aline` }, { id: 'leo', t: `${b} só Léo` }].forEach(div => {
-            let cd = cb.filter(c => c.divisao === div.id); if (cd.length === 0) return;
-            let total = cd.reduce((acc, c) => acc + Number(c.valorOriginal), 0);
-            h += `<h4 class="font-bold ${cor} mt-5 mb-2">${div.t}: ${total.toFixed(2)}</h4>`;
-            cd.forEach(c => { 
-                let ix = contas.indexOf(c); 
-                let descCompleta = c.descricao;
-                let badge = c.descricao.includes('(Fixo)') ? '<span class="ml-2 bg-indigo-100 text-indigo-700 px-1 py-0.5 rounded text-[8px] uppercase font-bold dark:bg-indigo-900/50 dark:text-indigo-300">Fixa</span>' : '';
-                h += `<div onclick="abrirAcaoItem(${ix})" class="flex justify-between items-center mb-2 p-2 -mx-2 rounded-lg cursor-pointer"><p class="text-sm dark:text-gray-200">${descCompleta} ${badge}</p><p class="text-sm font-bold dark:text-gray-200">${Number(c.valorOriginal).toFixed(2)}</p></div>`; 
-            });
-          });
-        });
-      } else {
-        const divisoesConfig = [
-          { id: 'ambos', t: '👥 AMBOS', totalLabel: 'Total Ambos', headerClass: 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-200 border-l-4 border-indigo-600' },
-          { id: 'aline', t: '🔴 SÓ ALINE', totalLabel: 'Total Só Aline', headerClass: 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border-l-4 border-red-500' },
-          { id: 'leo', t: '🔵 SÓ LÉO', totalLabel: 'Total Só Léo', headerClass: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-l-4 border-blue-500' }
-        ];
-        divisoesConfig.forEach(div => {
-          let cd = contasFiltradasNoModal.filter(c => c.divisao === div.id); if (cd.length === 0) return;
-          h += `<div class="${div.headerClass} px-3.5 py-2 rounded-xl font-black text-sm tracking-wider uppercase mt-6 mb-3 shadow-sm">${div.t}</div>`;
-          let somaDivisao = 0;
-          cd.forEach(c => { 
-              let ix = contas.indexOf(c); 
-              let nd = c.descricao; 
-              somaDivisao += Number(c.valorOriginal) || 0;
-              if(c.tipo==='poupanca') nd += ` (${meses[Number(c.mes)].substring(0,3)}/${c.ano})`; 
-              let badge = c.descricao.includes('(Fixo)') ? '<span class="ml-2 bg-indigo-100 text-indigo-700 px-1 py-0.5 rounded text-[8px] uppercase font-bold dark:bg-indigo-900/50 dark:text-indigo-300">Fixa</span>' : '';
-              h += `<div onclick="abrirAcaoItem(${ix})" class="p-4 bg-white dark:bg-gray-800 rounded-xl mb-3 shadow-sm cursor-pointer"><div class="flex justify-between"><div><p class="font-bold dark:text-white">${nd} ${badge}</p><p class="text-xs uppercase text-gray-500">${c.tipo}</p></div><div class="text-right"><p class="font-bold dark:text-white">R$ ${Number(c.valorOriginal).toFixed(2)}</p></div></div></div>`; 
-          });
-          if (p === 'vale' || p === 'pagamento') {
-              h += `<div class="flex justify-between items-center bg-gray-100 dark:bg-gray-800/90 px-4 py-2.5 rounded-xl mb-2 border border-gray-200 dark:border-gray-700"><span class="font-extrabold text-xs uppercase text-gray-700 dark:text-gray-300">${div.totalLabel}</span><span class="font-black text-sm text-gray-900 dark:text-white">R$ ${somaDivisao.toFixed(2).replace('.', ',')}</span></div>`;
-          }
-        });
-      }
-      document.getElementById('detalhesConteudo').innerHTML = h;
-    }
-    
-    function fecharDetalhes() { document.getElementById('modalDetalhes').classList.add('escondido'); }
-    function abrirAcaoItem(i) { itemSelecionado = i; document.getElementById('acaoItemTitulo').innerText = contas[i].descricao.replace(/\s\(Fixo.*\)/, ''); document.getElementById('modalAcaoItem').classList.remove('escondido'); }
-    function fecharAcaoItem() { document.getElementById('modalAcaoItem').classList.add('escondido'); }
-    
-    async function perguntarExcluirItem() {
-      if (itemSelecionado === null || !contas[itemSelecionado]) return;
-      let cR = contas[itemSelecionado]; 
-      let ehP = /\(\d+\/\d+\)$/.test(cR.descricao); 
-      let ehFixo = cR.descricao.includes('(Fixo)');
+          <!-- 2. SOLICITANTE -->
+          <div class="input-group">
+            <label for="nova-os-solicitante">Solicitante</label>
+            <input type="text" id="nova-os-solicitante" placeholder="Seu nome completo" required>
+          </div>
 
-      let mE = 'apenas_este'; 
-      
-      if (ehP && cR.tipo !== 'poupanca') {
-          if (!confirm("Excluir?")) return;
-          if (confirm("Excluir TODAS seguintes?")) mE = 'todas_seguintes';
-      } else if (ehFixo) {
-          let dataCriacao = Number(cR.ano) * 12 + Number(cR.mes);
-          let dataAtualView = anoAtual * 12 + mesAtualIndex;
-          if (dataCriacao === dataAtualView) {
-              if (!confirm("Excluir conta fixa criada neste mês?")) return;
-              mE = 'apagar_fixa_tudo';
-          } else {
-              if (confirm("⚠️ Esta é uma Conta Fixa.\n\n[OK] = Encerrar a partir deste mês (Mantém histórico antigo intacto)\n[Cancelar] = Apagar todo o histórico desde o início")) {
-                  mE = 'encerrar_fixa';
-              } else {
-                  if (!confirm("Tem certeza absoluta que deseja apagar essa conta fixa de TODOS OS MESES do passado também?")) return;
-                  mE = 'apagar_fixa_tudo';
-              }
-          }
-      } else {
-          if (!confirm("Excluir?")) return;
-      }
-      
-      const btn = document.getElementById('btnExcluirItemUI');
-      if (btn) { btn.innerHTML = "Preparando..."; btn.disabled = true; }
-      
-      if (mE === 'encerrar_fixa') {
-          let prevData = (anoAtual * 12 + mesAtualIndex) - 1;
-          let strDataFim = `(Fixo até ${String((prevData % 12) + 1).padStart(2, '0')}/${Math.floor(prevData / 12)})`;
-          let oldDesc = cR.descricao;
-          let novaDesc = oldDesc.replace(/\(Fixo.*\)/, strDataFim);
-          
-          contas[itemSelecionado].descricao = novaDesc;
-          atualizarTela();
-          if (btn) btn.innerHTML = "Encerrando...";
-          await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: oldDesc, mes: cR.mes, ano: cR.ano, modo: 'apenas_este' }) });
-          await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify(contas[itemSelecionado]) });
-      } 
-      else if (mE === 'apagar_fixa_tudo') {
-          let oldDesc = cR.descricao;
-          contas.splice(itemSelecionado, 1);
-          atualizarTela();
-          if (btn) btn.innerHTML = "Excluindo tudo...";
-          await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: oldDesc, mes: cR.mes, ano: cR.ano, modo: 'apenas_este' }) });
-      }
-      else {
-          let itensParaExcluir = [cR];
-          if (mE === 'todas_seguintes') {
-            let bN = cR.descricao.replace(/\s\(\d+\/\d+\)$/, '');
-            itensParaExcluir = contas.filter(x => { 
-                let xB = x.descricao.replace(/\s\(\d+\/\d+\)$/, ''); 
-                let fut = (Number(x.ano) > Number(cR.ano)) || (Number(x.ano) === Number(cR.ano) && Number(x.mes) >= Number(cR.mes)); 
-                return (xB === bN && fut && x.tipo === cR.tipo && x.divisao === cR.divisao); 
-            });
-            contas = contas.filter(x => !itensParaExcluir.includes(x));
-          } else {
-            contas.splice(itemSelecionado, 1);
-          }
-          atualizarTela(); 
-          
-          try { 
-             if (ehP && mE === 'todas_seguintes') {
-                 await executarLoteFetch(itensParaExcluir, (item) => ({ acao: 'excluir', descricao: item.descricao, mes: item.mes, ano: item.ano, modo: 'apenas_este' }), btn, "Excluindo");
-             } else {
-                 if (btn) btn.innerHTML = "Excluindo...";
-                 await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: cR.descricao, mes: cR.mes, ano: cR.ano, modo: mE }) }); 
-             }
-          } catch(e){}
-      }
-      
-      if (btn) { btn.innerHTML = "🗑️ EXCLUIR"; btn.disabled = false; }
-      fecharAcaoItem(); fecharDetalhes(); 
-      itemSelecionado = null;
-    }
+          <!-- 3. SETOR / LOCAL -->
+          <div class="input-group">
+            <label for="nova-os-local">Setor / Local</label>
+            <input type="text" id="nova-os-local" placeholder="Ex: Refeitório, Bloco B - Sala 302" required>
+          </div>
 
-    function abrirAlterarItem() { 
-        if (itemSelecionado === null || !contas[itemSelecionado]) return;
-        fecharAcaoItem(); 
-        document.getElementById('altDesc').value = contas[itemSelecionado].descricao.replace(/\s\(\d+\/\d+\)$/, '').replace(/\s\(Fixo.*\)/, ''); 
-        document.getElementById('altValor').value = contas[itemSelecionado].valorOriginal; 
-        document.getElementById('altParcelas').value = 1; 
-        document.getElementById('modalAlterar').classList.remove('escondido'); 
-        
-        let ehFixo = contas[itemSelecionado].descricao.includes('(Fixo)');
-        let elParc = document.getElementById('altParcelas');
-        if(ehFixo) {
-            elParc.parentElement.style.display = 'none';
-        } else {
-            elParc.parentElement.style.display = 'block';
-        }
-    }
-    
-    function fecharAlterar() { document.getElementById('modalAlterar').classList.add('escondido'); }
-    
-    async function salvarAlteracao() {
-      if (itemSelecionado === null || !contas[itemSelecionado]) return;
-      let nD = document.getElementById('altDesc').value; let nV = parseFloat(document.getElementById('altValor').value.replace(',', '.')); let nP = parseInt(document.getElementById('altParcelas').value) || 1;
-      if(!nD || isNaN(nV)) return alert("Preencha!"); 
-      
-      const btn = document.getElementById('btnSalvarAlt'); 
-      btn.innerHTML = "Preparando..."; 
-      btn.disabled = true;
-      
-      let cA = contas[itemSelecionado]; 
-      let ehP = /\(\d+\/\d+\)$/.test(cA.descricao); 
-      let ehFixo = cA.descricao.includes('(Fixo)');
-      let mE = 'apenas_este';
-      
-      if (ehFixo) {
-          let dataCriacao = Number(cA.ano) * 12 + Number(cA.mes);
-          let dataAtualView = anoAtual * 12 + mesAtualIndex;
-          
-          if (dataCriacao === dataAtualView) {
-              mE = 'alterar_fixa_tudo'; 
-          } else {
-              if(confirm("⚠️ Esta é uma Conta Fixa.\n\n[OK] = Alterar APENAS deste mês em diante (Cria um novo histórico e mantém o passado intacto)\n[Cancelar] = Alterar no passado também")) {
-                  mE = 'alterar_fixa_frente';
-              } else {
-                  mE = 'alterar_fixa_tudo';
-              }
-          }
-      } else if (ehP && nP === 1) {
-          if(confirm("Este item é parcelado.\n\nDeseja alterar TODAS as parcelas seguintes também?\n\n[OK] = Alterar esta e as futuras\n[Cancelar] = Alterar APENAS esta (Mantém o nome)")) {
-              mE = 'todas_seguintes';
-          }
-      } else if (nP > 1 && cA.tipo !== 'poupanca') {
-          mE = 'todas_seguintes';
-      }
+          <!-- 4. DESCRIÇÃO DO SERVIÇO -->
+          <div class="input-group">
+            <label for="nova-os-desc">Descrição do Serviço</label>
+            <textarea id="nova-os-desc" rows="3" placeholder="Descreva o que precisa ser feito..." required></textarea>
+          </div>
 
-      if (mE === 'alterar_fixa_tudo') {
-          let oldDesc = cA.descricao;
-          let isEncerradaMatch = oldDesc.match(/\(Fixo até \d{2}\/\d{4}\)/);
-          let tag = isEncerradaMatch ? isEncerradaMatch[0] : "(Fixo)";
-          let novaDesc = nD + " " + tag;
-          
-          let nC = { ...cA, descricao: novaDesc, valorOriginal: nV };
-          if (nC.divisao === 'ambos') { nC.valorAline = nV / 2; nC.valorLeo = nV / 2; } else if (nC.divisao === 'aline') nC.valorAline = nV; else nC.valorLeo = nV;
-          
-          contas.splice(itemSelecionado, 1); contas.push(nC); atualizarTela();
-          
-          btn.innerHTML = "Atualizando...";
-          await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: oldDesc, mes: cA.mes, ano: cA.ano, modo: 'apenas_este' }) });
-          await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify(nC) });
+          <!-- 5. BOTÕES DE ANEXOS LADO A LADO -->
+          <div id="area-upload-criacao" class="upload-buttons-row">
+            <button type="button" class="btn-outline animate-pop btn-upload-split" onclick="abrirEscolhaFoto('CRIACAO')">
+              <span class="material-symbols-outlined">add_a_photo</span> Anexar Foto
+            </button>
+            <input type="file" id="input-foto-criacao-camera" accept="image/*" capture="environment" style="display:none;" onchange="adicionarArquivosCriacao(event)">
+            <input type="file" id="input-foto-criacao-galeria" accept="image/jpeg,image/jpg,image/png,image/webp,image/*" multiple style="display:none;" onchange="adicionarArquivosCriacao(event)">
 
-      } else if (mE === 'alterar_fixa_frente') {
-          let oldDesc = cA.descricao;
-          let prevData = (anoAtual * 12 + mesAtualIndex) - 1;
-          let strDataFim = `(Fixo até ${String((prevData % 12) + 1).padStart(2, '0')}/${Math.floor(prevData / 12)})`;
-          let descEncerrada = oldDesc.replace(/\(Fixo.*\)/, strDataFim);
-          
-          contas[itemSelecionado].descricao = descEncerrada;
-          
-          let novaDesc = nD + " (Fixo)";
-          let nC = { tipo: cA.tipo, descricao: novaDesc, divisao: cA.divisao, periodo: cA.periodo, mes: mesAtualIndex, ano: anoAtual, valorOriginal: nV, valorAline: 0, valorLeo: 0 };
-          if (nC.divisao === 'ambos') { nC.valorAline = nV / 2; nC.valorLeo = nV / 2; } else if (nC.divisao === 'aline') nC.valorAline = nV; else nC.valorLeo = nV;
-          
-          contas.push(nC); atualizarTela();
-          
-          btn.innerHTML = "Criando histórico...";
-          await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: oldDesc, mes: cA.mes, ano: cA.ano, modo: 'apenas_este' }) });
-          await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify(contas[itemSelecionado]) });
-          await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify(nC) });
-          
-      } else {
-          let itensParaExcluir = [cA];
-          if (mE === 'todas_seguintes') { 
-              let bN = cA.descricao.replace(/\s\(\d+\/\d+\)$/, ''); 
-              itensParaExcluir = contas.filter(x => { 
-                  let xB = x.descricao.replace(/\s\(\d+\/\d+\)$/, ''); 
-                  let fut = (Number(x.ano) > Number(cA.ano)) || (Number(x.ano) === Number(cA.ano) && Number(x.mes) >= Number(cA.mes)); 
-                  return (xB === bN && fut && x.tipo === cA.tipo && x.divisao === cA.divisao); 
-              }); 
-              contas = contas.filter(x => !itensParaExcluir.includes(x)); 
-          } else { 
-              contas.splice(itemSelecionado, 1); 
-          }
-          
-          let geradas = []; 
-          let bNew = nD;
-          if (mE === 'todas_seguintes') bNew = nD.replace(/\s\(\d+\/\d+\)$/, ''); 
-          
-          for (let i = 0; i < (cA.tipo === 'poupanca' ? 1 : nP); i++) {
-            let mD = (mesAtualIndex + i) % 12; let aD = anoAtual + Math.floor((mesAtualIndex + i) / 12); 
-            let dF = bNew; if (nP > 1 && cA.tipo !== 'poupanca') dF = `${bNew} (${i + 1}/${nP})`; 
-            let nC = { tipo: cA.tipo, descricao: dF, divisao: cA.divisao, periodo: cA.periodo, mes: mD, ano: aD, valorOriginal: nV, valorAline: 0, valorLeo: 0 };
-            if (nC.divisao === 'ambos') { nC.valorAline = nV / 2; nC.valorLeo = nV / 2; } else if (nC.divisao === 'aline') nC.valorAline = nV; else nC.valorLeo = nV; geradas.push(nC);
-          }
-          contas.push(...geradas); atualizarTela();
-          
-          try { 
-             if (ehP && mE === 'todas_seguintes') {
-                 await executarLoteFetch(itensParaExcluir, (item) => ({ acao: 'excluir', descricao: item.descricao, mes: item.mes, ano: item.ano, modo: 'apenas_este' }), btn, "Limpando");
-             } else {
-                 btn.innerHTML = "Limpando antiga...";
-                 await fetch(URL_PLANILHA, { method: "POST", body: JSON.stringify({ acao: 'excluir', descricao: cA.descricao, mes: cA.mes, ano: cA.ano, modo: mE }) }); 
-             }
-             await executarLoteFetch(geradas, (c) => c, btn, "Salvando");
-          } catch(e){}
-      }
-      
-      fecharAlterar(); fecharDetalhes(); 
-      btn.innerHTML = "Salvar Alteração"; 
-      btn.disabled = false;
-      itemSelecionado = null;
-    }
-  </script>
+            <button type="button" class="btn-outline animate-pop btn-upload-split" onclick="document.getElementById('nova-os-arquivo').click()">
+              <span class="material-symbols-outlined">upload_file</span> Adicionar Documento
+            </button>
+            <input type="file" id="nova-os-arquivo" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,application/pdf" multiple style="display:none;" onchange="adicionarArquivosCriacao(event)">
+          </div>
+
+          <!-- STATUS DE PROCESSAMENTO DE IMAGEM -->
+          <div id="status-processamento-criacao" style="display:none; font-size:0.82rem; color:var(--primary); font-weight:600; margin-bottom:10px; align-items:center; gap:6px;">
+            <span class="material-symbols-outlined spinning-icon" style="font-size:16px;">sync</span> Processando arquivo(s)...
+          </div>
+
+          <!-- MINIATURAS E LISTA DE ARQUIVOS SELECIONADOS COM REMOÇÃO -->
+          <div id="preview-arquivos-criacao" class="preview-anexos-grid"></div>
+
+          <!-- CAMPOS ADMIN -->
+          <div id="admin-fields-os" class="admin-only" style="display:none; gap:10px; flex-wrap:wrap; padding:10px; background:#f8fafc; border:1px solid var(--border); border-radius:8px; margin-bottom:15px;">
+            <p style="width:100%; font-size:0.8rem; color:var(--status-urgente); margin-top:0; font-weight:bold;">Administração</p>
+            <div class="input-group" style="flex:1; min-width: 130px; margin-bottom:0;">
+              <label>Previsão de Conclusão</label>
+              <input type="date" id="nova-os-prev">
+            </div>
+            <div class="input-group" style="flex:1; min-width: 130px; margin-bottom:0;">
+              <label>Prioridade</label>
+              <select id="nova-os-prio">
+                <option value="Baixa">Baixa</option>
+                <option value="Média" selected>Média</option>
+                <option value="Alta">Alta</option>
+                <option value="Urgente">🚨 Urgente</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:10px;">
+            <button type="button" class="btn-outline" style="flex:1; justify-content:center; border-color:var(--text-muted); color:var(--text-muted);" onclick="fecharModal('modal-nova-os')">Cancelar</button>
+            <button type="submit" class="btn-primary animate-pop" style="flex:2;" id="btn-salvar-os">Salvar O.S.</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL ESCOLHA ENTRE CÂMERA E GALERIA -->
+  <div id="modal-escolha-foto" class="modal-overlay" style="z-index: 2500;" onclick="fecharAoClicarFora(event, 'modal-escolha-foto')">
+    <div class="modal-content animate-modal" style="max-width: 360px;" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 style="font-size:1rem; display:flex; align-items:center; gap:6px;">
+          <span class="material-symbols-outlined" style="color:var(--primary);">add_a_photo</span> Anexar Foto
+        </h3>
+        <button type="button" class="btn-icon" onclick="fecharModal('modal-escolha-foto')" title="Fechar"><span class="material-symbols-outlined" style="font-size:18px;">close</span></button>
+      </div>
+      <div class="modal-body" style="display:flex; flex-direction:column; gap:10px;">
+        <p style="font-size:0.84rem; color:var(--text-muted); margin-bottom:4px;">Como deseja adicionar a foto?</p>
+        <button type="button" class="btn-primary animate-pop" onclick="selecionarOrigemFoto('CAMERA')">
+          <span class="material-symbols-outlined">photo_camera</span> Tirar Foto
+        </button>
+        <button type="button" class="btn-outline animate-pop" style="width:100%; justify-content:center; padding:12px;" onclick="selecionarOrigemFoto('GALERIA')">
+          <span class="material-symbols-outlined">photo_library</span> Escolher da Galeria
+        </button>
+        <button type="button" class="btn-outline" style="width:100%; justify-content:center; border-color:var(--text-muted); color:var(--text-muted);" onclick="fecharModal('modal-escolha-foto')">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EXCLUSIVO PARA VISUALIZAR ARQUIVOS DA O.S -->
+  <div id="modal-visualizar-arquivos" class="modal-overlay" onclick="fecharAoClicarFora(event, 'modal-visualizar-arquivos')">
+    <div class="modal-content animate-modal" style="max-width: 480px;" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 style="display:flex; align-items:center; gap:8px;"><span class="material-symbols-outlined" style="color:var(--primary);">folder_open</span> Arquivos Anexados</h3>
+        <button type="button" class="btn-icon" onclick="fecharModal('modal-visualizar-arquivos')" title="Fechar"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div class="modal-body" id="lista-links-arquivos" style="display:flex; flex-direction:column; gap:10px;"></div>
+    </div>
+  </div>
+
+  <!-- MODAL DETALHES COMPLETO -->
+  <div id="modal-detalhes" class="modal-overlay" onclick="fecharAoClicarFora(event, 'modal-detalhes')">
+    <div class="modal-content modal-large animate-modal" onclick="event.stopPropagation()">
+      <div class="modal-header modal-header-compact">
+        <div style="flex:1; min-width:0; padding-right:8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 4px;">
+            <h2 id="modal-id" style="color: var(--primary); font-family: monospace; font-size: 0.95rem;"></h2>
+            <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+              <span id="modal-status" style="font-weight: bold; font-size: 0.8rem;"></span>
+              <span id="modal-prioridade"></span>
+              <!-- BOTÃO DINÂMICO: OS EM ANDAMENTO / ALTERAR PROGRESSO (ADMIN) -->
+              <button type="button" id="btn-status-progresso-os" class="btn-status-progresso admin-only animate-pop" style="display:none;" onclick="acaoBotaoStatusProgresso()">
+                OS EM ANDAMENTO
+              </button>
+            </div>
+          </div>
+          <h3 id="modal-titulo" style="font-size: 0.95rem; color: var(--text-main); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></h3>
+        </div>
+        <button type="button" class="btn-icon" style="width:32px; height:32px; flex-shrink:0;" onclick="fecharModal('modal-detalhes')" title="Fechar"><span class="material-symbols-outlined" style="font-size:18px;">close</span></button>
+      </div>
+      <div class="modal-body modal-body-compact" id="modal-detalhes-body">
+
+        <div class="os-info-grid">
+          <div id="grid-datas-modal" style="width:100%; line-height:1.6;"></div>
+        </div>
+
+        <div id="area-orientacoes-os" style="background:var(--bg-color); padding:10px 12px; border-radius:8px; margin-bottom:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
+            <h4 style="font-size: 0.78rem; color: var(--text-muted); margin:0;">📌 Orientações / Informações / Anexos:</h4>
+            <button type="button" id="btn-edit-obs-os" class="btn-mini-acao animate-pop admin-only" title="Editar Orientações (Admin)" onclick="editarObservacaoOS()"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button>
+          </div>
+          <p id="modal-desc" style="font-size:0.85rem; line-height:1.4; word-wrap: break-word;"></p>
+        </div>
+
+        <div class="action-bar-os-compact">
+          <button type="button" class="btn-outline animate-pop" onclick="abrirEscolhaFoto('DETALHES')"><span class="material-symbols-outlined" style="font-size:18px;">photo_camera</span> Anexar Foto</button>
+          <input type="file" id="input-foto-detalhes-camera" accept="image/*" capture="environment" style="display:none;" onchange="receberFotoDetalhes(event)">
+          <input type="file" id="input-foto-detalhes-galeria" accept="image/jpeg,image/jpg,image/png,image/webp,image/*" style="display:none;" onchange="receberFotoDetalhes(event)">
+
+          <button type="button" class="btn-outline animate-pop" onclick="abrirModalUploadAnexo('ARQUIVO')"><span class="material-symbols-outlined" style="font-size:18px;">attach_file</span> Anexar Arquivo</button>
+
+          <button type="button" id="btn-excluir-os-modal" class="btn-outline animate-pop admin-only" style="color:var(--status-urgente); border-color:var(--status-urgente); margin-left:auto;" onclick="deletarOS()">
+            <span class="material-symbols-outlined" style="font-size:18px;">delete</span> Excluir O.S
+          </button>
+        </div>
+
+        <div style="margin-bottom: 18px; margin-top:10px;">
+          <div style="display:flex; justify-content: space-between; font-size: 0.8rem; font-weight: bold; margin-bottom: 4px;">
+            <span>Progresso da O.S.</span>
+            <span id="modal-progresso-txt">0%</span>
+          </div>
+          <div class="progress-bar-bg" style="height: 10px; border-radius:20px; background:#e2e8f0;">
+            <div class="progress-bar-fill" id="modal-progresso-bar" style="border-radius:20px;"></div>
+          </div>
+        </div>
+
+        <button type="button" id="btn-concluir-os-direto" class="btn-primary animate-pop admin-only" style="background: var(--status-concluido); color: white; width: 100%; margin-bottom: 18px; padding: 10px; font-size: 0.9rem;" onclick="concluirOSDireto()">
+          <span class="material-symbols-outlined" style="font-size:18px;">done_all</span> Concluir O.S. Imediatamente (100%)
+        </button>
+
+        <button type="button" id="btn-reverter-os" class="btn-outline animate-pop admin-only" style="color:#d97706; border-color:#f59e0b; background:#fffbeb; width: 100%; margin-bottom: 18px; padding: 10px; font-size: 0.9rem; justify-content:center; display:none;" onclick="reverterOSParaAndamento()">
+          <span class="material-symbols-outlined" style="font-size:18px;">undo</span> Reabrir O.S. (Voltar para Em Andamento)
+        </button>
+
+        <!-- SUBTAREFAS ADMIN -->
+        <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 8px; border-bottom: 2px solid var(--border); padding-bottom:4px;">
+          <h4 style="color:var(--text-main); font-size: 0.9rem;">📋 Pendências / Sub-Tarefas</h4>
+          <button type="button" class="btn-icon animate-pop admin-only" style="width:28px; height:28px; background:var(--primary); color:white;" onclick="abrirNovaSubTarefa()" title="Nova Pendência"><span class="material-symbols-outlined" style="font-size:16px;">add</span></button>
+        </div>
+
+        <div id="form-sub-tarefa" class="admin-only" style="display:none; background:var(--bg-color); padding:12px; border-radius:8px; margin-bottom:12px; border:1px dashed var(--primary); flex-direction:column;">
+          <input type="text" id="sub-desc" placeholder="O que precisa ser feito?" style="width:100%; padding:8px; margin-bottom:8px; border-radius:5px; border:1px solid var(--border); font-size:0.85rem;">
+          <input type="text" id="sub-resp" placeholder="Responsável" style="width:100%; padding:8px; border-radius:5px; border:1px solid var(--border); font-size:0.85rem;">
+          <div style="margin-top:8px; text-align:right; display:flex; gap:10px; justify-content:flex-end;">
+            <button type="button" class="btn-outline" style="padding:6px 12px; font-size:0.8rem;" onclick="document.getElementById('form-sub-tarefa').style.display='none'">Cancelar</button>
+            <button type="button" id="btn-salvar-subtarefa" class="btn-primary animate-pop" style="width:auto; padding:6px 14px; font-size:0.8rem;" onclick="salvarSubTarefa()">Salvar Pendência</button>
+          </div>
+        </div>
+
+        <div id="lista-sub-tarefas">
+          <div class="loading-state" style="padding: 15px 0;"><div class="spinner"></div><p style="font-size:0.8rem;">Carregando pendências...</p></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL AJUSTE DE PROGRESSO DA OS (1% A 100%) -->
+  <div id="modal-progresso-os" class="modal-overlay" style="z-index: 2300;" onclick="fecharAoClicarFora(event, 'modal-progresso-os')">
+    <div class="modal-content animate-modal" style="max-width: 400px;" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 style="font-size:1rem; display:flex; align-items:center; gap:6px;">
+          <span class="material-symbols-outlined" style="color:var(--primary);">tune</span> Alterar Progresso da O.S.
+        </h3>
+        <button type="button" class="btn-icon" onclick="fecharModal('modal-progresso-os')" title="Fechar"><span class="material-symbols-outlined" style="font-size:18px;">close</span></button>
+      </div>
+      <div class="modal-body">
+        <div class="progresso-destaque-box">
+          <span id="valor-progresso-slider" class="progresso-numero-destaque">1%</span>
+          <span id="aviso-conclusao-slider" class="progresso-subtexto">Arraste a barra ou selecione um percentual</span>
+        </div>
+
+        <input type="range" id="slider-progresso-os" min="1" max="100" value="1" class="progresso-range-input" oninput="atualizarPreviewSliderProgresso(this.value)">
+
+        <div class="progresso-atalhos-grid">
+          <button type="button" class="btn-atalho-prog" onclick="definirValorSliderProgresso(1)">1%</button>
+          <button type="button" class="btn-atalho-prog" onclick="definirValorSliderProgresso(10)">10%</button>
+          <button type="button" class="btn-atalho-prog" onclick="definirValorSliderProgresso(25)">25%</button>
+          <button type="button" class="btn-atalho-prog" onclick="definirValorSliderProgresso(50)">50%</button>
+          <button type="button" class="btn-atalho-prog" onclick="definirValorSliderProgresso(75)">75%</button>
+          <button type="button" class="btn-atalho-prog" onclick="definirValorSliderProgresso(90)">90%</button>
+          <button type="button" class="btn-atalho-prog" onclick="definirValorSliderProgresso(99)">99%</button>
+          <button type="button" class="btn-atalho-prog btn-atalho-100" onclick="definirValorSliderProgresso(100)">100%</button>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:16px;">
+          <button type="button" class="btn-outline" style="flex:1; justify-content:center; color:var(--text-muted); border-color:var(--text-muted);" onclick="fecharModal('modal-progresso-os')">Cancelar</button>
+          <button type="button" id="btn-confirmar-progresso-os" class="btn-primary animate-pop" style="flex:2;" onclick="salvarProgressoManualOS()">Confirmar Progresso</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EXCLUSIVO PARA UPLOAD DE FOTO / ARQUIVO NA OS -->
+  <div id="modal-upload-anexo" class="modal-overlay" style="z-index: 2000;" onclick="fecharAoClicarFora(event, 'modal-upload-anexo')">
+    <div class="modal-content animate-modal" style="max-width: 400px;" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 id="upload-anexo-titulo" style="font-size:1rem;">Anexar Arquivo</h3>
+        <button type="button" class="btn-icon" onclick="fecharModal('modal-upload-anexo')" title="Fechar"><span class="material-symbols-outlined" style="font-size:18px;">close</span></button>
+      </div>
+      <div class="modal-body">
+        <div style="text-align:center;">
+          <button type="button" class="btn-outline animate-pop" style="display:inline-flex; width:100%; justify-content:center; padding:16px; border:2px dashed var(--primary); font-size:0.85rem;" onclick="acionarSeletorModalUpload()">
+            <span class="material-symbols-outlined" style="font-size:24px; margin-right:8px;" id="icone-upload-anexo">upload_file</span>
+            <span id="texto-btn-escolher-anexo">Escolher Arquivo</span>
+          </button>
+          <input type="file" id="input-anexo-os" style="display:none;" onchange="lerArquivoParaUpload(event)">
+          <div id="preview-anexo-unico" style="margin-top:10px; font-size:0.82rem; color:var(--status-concluido); font-weight:bold;"></div>
+        </div>
+
+        <div class="input-group" style="margin-top:15px;">
+          <label for="input-autor-anexo">Seu nome para identificação do envio</label>
+          <input type="text" id="input-autor-anexo" placeholder="Ex: Carlos Silva">
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:15px;">
+          <button type="button" class="btn-outline" style="flex:1; justify-content:center; color:var(--text-muted); border-color:var(--text-muted);" onclick="fecharModal('modal-upload-anexo')">Cancelar</button>
+          <button type="button" class="btn-primary animate-pop" id="btn-confirmar-upload-anexo" style="flex:1;" onclick="enviarAnexoParaOS()">Enviar Anexo</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EXCLUSIVO PARA EDITAR SUBTAREFA (BOTÃO LÁPIS DA SUBTAREFA) -->
+  <div id="modal-editar-subtarefa" class="modal-overlay" style="z-index: 2100;" onclick="fecharAoClicarFora(event, 'modal-editar-subtarefa')">
+    <div class="modal-content animate-modal" style="max-width: 400px;" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 style="font-size:1rem; display:flex; align-items:center; gap:6px;"><span class="material-symbols-outlined" style="color:var(--primary);">edit_note</span> Editar Sub-Tarefa</h3>
+        <button type="button" class="btn-icon" onclick="fecharModal('modal-editar-subtarefa')" title="Fechar"><span class="material-symbols-outlined" style="font-size:18px;">close</span></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="edit-sub-id">
+        <div class="input-group">
+          <label for="edit-sub-desc">Descrição da Sub-Tarefa</label>
+          <input type="text" id="edit-sub-desc" placeholder="O que precisa ser feito?">
+        </div>
+        <div class="input-group">
+          <label for="edit-sub-resp">Responsável</label>
+          <input type="text" id="edit-sub-resp" placeholder="Nome do responsável">
+        </div>
+        <div style="display:flex; gap:10px; margin-top:15px;">
+          <button type="button" class="btn-outline" style="flex:1; justify-content:center; color:var(--text-muted); border-color:var(--text-muted);" onclick="fecharModal('modal-editar-subtarefa')">Cancelar</button>
+          <button type="button" class="btn-primary animate-pop" id="btn-salvar-edicao-sub" style="flex:1;" onclick="salvarEdicaoSubTarefa()">Salvar Alterações</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EXCLUSIVO PARA ADICIONAR / EDITAR COMENTÁRIO DA SUBTAREFA -->
+  <div id="modal-comentario-sub" class="modal-overlay" style="z-index: 2200;" onclick="fecharAoClicarFora(event, 'modal-comentario-sub')">
+    <div class="modal-content animate-modal" style="max-width: 400px;" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 id="titulo-modal-comentario" style="font-size:1rem; display:flex; align-items:center; gap:6px;"><span class="material-symbols-outlined" style="color:var(--primary);">chat</span> Adicionar Comentário</h3>
+        <button type="button" class="btn-icon" onclick="fecharModal('modal-comentario-sub')" title="Fechar"><span class="material-symbols-outlined" style="font-size:18px;">close</span></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="comentario-sub-id">
+        <input type="hidden" id="comentario-item-id">
+        <div class="input-group">
+          <label for="texto-comentario-sub">Comentário</label>
+          <textarea id="texto-comentario-sub" rows="3" placeholder="Escreva o comentário da pendência..."></textarea>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:15px;">
+          <button type="button" class="btn-outline" style="flex:1; justify-content:center; color:var(--text-muted); border-color:var(--text-muted);" onclick="fecharModal('modal-comentario-sub')">Cancelar</button>
+          <button type="button" class="btn-primary animate-pop" id="btn-salvar-comentario-sub" style="flex:1;" onclick="salvarComentarioSubTarefa()">Adicionar Comentário</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
 </body>
 </html>
